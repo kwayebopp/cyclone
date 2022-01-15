@@ -9,35 +9,10 @@
 #
 # cyclone-0.1.0
 
-module Cyclone
-  def atom(*args, &blk); end
-  def concat(*args, &blk); end
+class Rational < Numeric
   def next_sample(*args, &blk); end
   def sample(*args, &blk); end
-  def self.atom(value); end
-  def self.concat(cycles); end
-  def self.next_sample(t); end
-  def self.sample(t); end
-  def self.silence; end
-  def self.slowcat(patterns); end
-  def self.span_cycles(b, e); end
-  def self.whole_cycle(t); end
-  def silence(*args, &blk); end
-  def slowcat(*args, &blk); end
-  def span_cycles(*args, &blk); end
   def whole_cycle(*args, &blk); end
-  extend T::Private::Methods::MethodHooks
-  extend T::Private::Methods::SingletonMethodHooks
-  extend T::Sig
-  include Kernel
-end
-class Cyclone::Error < StandardError
-end
-class Cyclone::Pattern
-  def initialize(*args, &blk); end
-  def query(*args, &blk); end
-  def query=(arg0); end
-  def split_queries(*args, &blk); end
   extend T::Private::Methods::MethodHooks
   extend T::Private::Methods::SingletonMethodHooks
   extend T::Sig
