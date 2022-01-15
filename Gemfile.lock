@@ -1,0 +1,29 @@
+PATH
+  remote: .
+  specs:
+    cyclone (0.1.0)
+      sorbet
+      sorbet-runtime
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    minitest (5.15.0)
+    rake (13.0.6)
+    sorbet (0.5.9531)
+      sorbet-static (= 0.5.9531)
+    sorbet-runtime (0.5.9531)
+    sorbet-static (0.5.9531-x86_64-linux)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  cyclone!
+  minitest (~> 5.0)
+  rake (~> 13.0)
+  sorbet
+  sorbet-runtime
+
+BUNDLED WITH
+   2.2.19
