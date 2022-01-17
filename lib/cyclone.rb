@@ -108,7 +108,7 @@ module Cyclone
   # function of time.
   class Pattern
     extend T::Sig
-    Query = T.type_alias { T.proc.params(span: TimeSpan).returns(T::Array[T.untyped]) }
+    Query = T.type_alias { T.proc.params(span: TimeSpan).returns(T::Array[Event]) }
 
     sig { returns(Query) }
     attr_accessor :query
@@ -174,6 +174,29 @@ module Cyclone
       fast_query = with_query_time(->(t) { t * factor })
       fast_query.with_event_time(->(t) { t / factor })
     end
+
+    # Slow slows down a pattern
+    sig { params(factor: Numeric).returns(Pattern) }
+    def slow(factor)
+      fast(1 / factor.to_f)
+    end
+
+    # Equivalent of Tidal's `<~` operator
+    sig { params(offset: Numeric).returns(Pattern) }
+    def early(offset)
+      with_query_time(->(t) { t + offset }).with_event_time(->(t) { t - offset })
+    end
+
+    # Equivalent of Tidal's `~>` operator
+    sig { params(offset: Numeric).returns(Pattern) }
+    def late(offset)
+      early(-offset)
+    end
+
+    sig { returns(T::Array[Event]) }
+    def first_cycle
+      query.call(TimeSpan.new(Rational(0), Rational(1)))
+    end
   end
 
   # TimeSpan is simply an interval of time,
@@ -199,8 +222,8 @@ module Cyclone
       return [self] if start.sample == stop.sample
 
       next_start = start.next_sample
-      spans = Cyclone::TimeSpan.new(next_start, stop).span_cycles
-      spans.unshift(Cyclone::TimeSpan.new(start, next_start))
+      spans = TimeSpan.new(next_start, stop).span_cycles
+      spans.unshift(TimeSpan.new(start, next_start))
     end
 
     # Applies given function to both the begin and end time value of the timespan
