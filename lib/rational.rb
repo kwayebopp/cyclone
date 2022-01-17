@@ -3,21 +3,24 @@
 
 require "sorbet-runtime"
 
+# Extends the `Rational < Numeric` class to support operations
+# needed by `Cyclone` and its subclasses
 class Rational
   extend T::Sig
 
-  #  The start of the cycle that a given time value is in
+  #  Returns the start of the cycle.
   sig { returns(Rational) }
   def sample
     Rational(floor)
   end
 
-  # The start of the next cycle
+  # Returns the start of the next cycle.
   sig { returns(Rational) }
   def next_sample
     sample + 1
   end
 
+  # Returns a TimeSpan representing the begin and end of the Time value's cycle
   sig { returns(Cyclone::TimeSpan) }
   def whole_cycle
     Cyclone::TimeSpan.new(sample, next_sample)
