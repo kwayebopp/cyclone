@@ -13,10 +13,12 @@ module Cyclone
 
   module_function
 
-  # flatten list of lists
-  sig { params(cycles: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
-  def concat(cycles)
-    cycles.flatten
+  sig { returns(T.untyped) }
+  def check_test
+    a = atom("hello")
+    b = atom("world")
+    c = slowcat([a, b])
+    c.query.call(TimeSpan.new(Rational(0), Rational(2)))
   end
 
   # Fundamental patterns
@@ -31,7 +33,9 @@ module Cyclone
   sig { params(value: T.untyped).returns(Pattern) }
   def atom(value)
     query = lambda do |span|
-      span.span_cycles.map { |s| [s.start.whole_cycle, s, value] }
+      span.span_cycles.map do |s|
+        Event.new(s.start.whole_cycle, s, value)
+      end
     end
 
     Pattern.new(query)
@@ -47,6 +51,70 @@ module Cyclone
     pattern.split_queries
   end
 
+  class Event
+    extend T::Sig
+
+    sig { returns(TimeSpan) }
+    attr_accessor :whole, :part
+
+    sig { returns(T.untyped) }
+    attr_accessor :value
+
+    sig { params(whole: TimeSpan, part: TimeSpan, value: T.untyped).void }
+    def initialize(whole, part, value)
+      @whole = T.let(whole, TimeSpan)
+      @part = T.let(part, TimeSpan)
+      @value = value
+    end
+
+    sig { returns(String) }
+    def to_s
+      "Event(#{whole}, #{part}, #{value})"
+    end
+  end
+
+  class Pattern
+    extend T::Sig
+    Query = T.type_alias { T.proc.params(span: TimeSpan).returns(T::Array[T.untyped]) }
+
+    sig { returns(Query) }
+    attr_accessor :query
+
+    sig { params(query: Query).void }
+    def initialize(query)
+      @query = T.let(query, Query)
+    end
+
+    # Splits queries at cycle boundaries. Makes some calculations easier
+    # to express, as everything then happens within a cycle.
+    sig { returns(Pattern) }
+    def split_queries
+      query = lambda do |span|
+        span.span_cycles.map { |s| self.query.call(s) }.flatten
+      end
+
+      Pattern.new(query)
+    end
+
+    sig { params(fun: T.proc.params(span: TimeSpan).returns(TimeSpan)).returns(Pattern) }
+    def with_query_span(fun)
+      query = lambda do |span|
+        self.query.call(fun.call(span))
+      end
+
+      Pattern.new(query)
+    end
+
+    sig { params(fun: T.proc.params(arg0: Rational).returns(Rational)).returns(Pattern) }
+    def with_query_time(fun)
+      query = lambda do |span|
+        self.query.call(span.with_time(fun))
+      end
+
+      Pattern.new(query)
+    end
+  end
+
   class TimeSpan
     extend T::Sig
 
@@ -55,8 +123,8 @@ module Cyclone
 
     sig { params(start: Rational, stop: Rational).void }
     def initialize(start, stop)
-      @start = start
-      @stop = stop
+      @start = T.let(start, Rational)
+      @stop = T.let(stop, Rational)
     end
 
     sig { returns(T::Array[TimeSpan]) }
@@ -69,33 +137,14 @@ module Cyclone
       spans.unshift(Cyclone::TimeSpan.new(start, next_start))
     end
 
+    sig { params(fun: T.proc.params(arg0: Rational).returns(Rational)).returns(TimeSpan) }
+    def with_time(fun)
+      TimeSpan.new(fun.call(start), fun.call(stop))
+    end
+
     sig { returns(String) }
     def to_s
       "TimeSpan(#{start}, #{stop})"
-    end
-  end
-
-  class Pattern
-    extend T::Sig
-    Query = T.type_alias { T.proc.params(span: TimeSpan).returns(T.untyped) }
-
-    sig { returns(Query) }
-    attr_accessor :query
-
-    sig { params(query: Query).void }
-    def initialize(query)
-      @query = query
-    end
-
-    # Splits queries at cycle boundaries. Makes some calculations easier
-    # to express, as everything then happens within a cycle.
-    sig { returns(Pattern) }
-    def split_queries
-      query = lambda do |span|
-        span.span_cycles.map { |s| self.query.call(s) }
-      end
-
-      Pattern.new(T.let(query, Query))
     end
   end
 end
