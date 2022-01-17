@@ -13,12 +13,34 @@ module Cyclone
 
   module_function
 
+  # Better formatting for printing Tidal Patterns
+  sig { params(pattern: Pattern, query_span: TimeSpan).void }
+  def pattern_pretty_printing(pattern:, query_span:)
+    pattern.query.call(query_span).each do |event|
+      puts event.to_s
+    end
+    nil
+  end
+
   sig { returns(T.untyped) }
   def check_test
     a = atom("hello")
     b = atom("world")
-    c = slowcat([a, b])
-    c.query.call(TimeSpan.new(Rational(0), Rational(2)))
+    c = fastcat([a, b])
+
+    #  Printing the pattern
+    puts("\n== TEST PATTERN ==\n")
+    pattern_pretty_printing(
+      pattern: c,
+      query_span: TimeSpan.new(0.to_r, 2.to_r)
+    )
+
+    # Printing the pattern with fast
+    puts("\n== SAME BUT FASTER==\n")
+    pattern_pretty_printing(
+      pattern: c.fast(2),
+      query_span: TimeSpan.new(0.to_r, 1.to_r)
+    )
   end
 
   # Fundamental patterns
@@ -59,6 +81,16 @@ module Cyclone
   sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
   def fastcat(patterns)
     slowcat(patterns).fast(patterns.size)
+  end
+
+  # Pile up patterns
+  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  def stack(patterns)
+    query = lambda do |span|
+      patterns.map { |pattern| pattern.query.call(span) }.flatten
+    end
+
+    Pattern.new(query)
   end
 
   # Event class, representing a value active during the timespan
@@ -195,7 +227,7 @@ module Cyclone
 
     sig { returns(T::Array[Event]) }
     def first_cycle
-      query.call(TimeSpan.new(Rational(0), Rational(1)))
+      query.call(TimeSpan.new(0.to_r, 1.to_r))
     end
   end
 
