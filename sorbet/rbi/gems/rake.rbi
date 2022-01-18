@@ -299,6 +299,7 @@ class Rake::FileList
   def select(*args, &block); end
   def self.[](*args); end
   def self.glob(pattern, *args); end
+  def shelljoin(*args, &block); end
   def shift(*args, &block); end
   def shuffle!(*args, &block); end
   def shuffle(*args, &block); end

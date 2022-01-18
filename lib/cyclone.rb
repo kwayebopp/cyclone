@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+# require "pry"
 require "sorbet-runtime"
 require_relative "cyclone/version"
 
@@ -39,6 +40,16 @@ module Cyclone
     puts("\n== SAME BUT FASTER==\n")
     pattern_pretty_printing(
       pattern: c.fast(2),
+      query_span: TimeSpan.new(0.to_r, 1.to_r)
+    )
+
+    # Apply pattern of values to a pattern of functions
+    puts("\n== APPLICATIVE ==\n")
+    x = fastcat([atom(->(x) { x + 1 }), atom(->(x) { x + 2 })])
+    y = fastcat([atom(3), atom(4), atom(5)])
+    z = x.app(y)
+    pattern_pretty_printing(
+      pattern: z,
       query_span: TimeSpan.new(0.to_r, 1.to_r)
     )
   end
@@ -119,8 +130,8 @@ module Cyclone
       @value = value
     end
 
-    # Returns a new event with the function fun applied to the event timespan.
-    # I'd use a `SpanLambda` here, but need to allow for `nil` for `whole`
+    # Returns a new `Event` with the function fun applied to the event `TimeSpan`s.
+    # I'd use a `SpanLambda` here, but need to allow for `nil` for the event `whole`
     sig { params(fun: T.proc.params(span: T.nilable(TimeSpan)).returns(TimeSpan)).returns(Event) }
     def with_span(fun)
       Event.new(
@@ -130,13 +141,19 @@ module Cyclone
       )
     end
 
+    # Returns a new `Event` with the function `fun` applies to the event `value`.
+    sig { params(fun: T.proc.params(value: T.untyped).returns(T.untyped)).returns(Event) }
+    def with_value(fun)
+      Event.new(whole, part, fun.call(value))
+    end
+
     sig { returns(String) }
     def to_s
       "Event(#{whole}, #{part}, #{value})"
     end
   end
 
-  # Pattern class, representing discrete and continuous events as a
+  # `Pattern` class, representing discrete and continuous `Event`s as a
   # function of time.
   class Pattern
     extend T::Sig
@@ -161,7 +178,7 @@ module Cyclone
       Pattern.new(query)
     end
 
-    # Returns a new pattern, with the function applied to the timespan of the query.
+    # Returns a new `Pattern`, with the function applied to the `TimeSpan` of the query.
     sig { params(span_lambda: TimeSpan::SpanLambda).returns(Pattern) }
     def with_query_span(span_lambda)
       query = lambda do |span|
@@ -171,8 +188,8 @@ module Cyclone
       Pattern.new(query)
     end
 
-    # Returns a new pattern, with the function applied to both the start
-    # and stop of the the query timespan.
+    # Returns a new `Pattern`, with the function applied to both the `start`
+    # and `stop` of the the query `TimeSpan`.
     sig { params(rational_lambda: TimeSpan::TimeLambda).returns(Pattern) }
     def with_query_time(rational_lambda)
       query = lambda do |span|
@@ -182,7 +199,7 @@ module Cyclone
       Pattern.new(query)
     end
 
-    # Returns a new pattern, with the function applied to each event
+    # Returns a new `Pattern`, with the function applied to each `Event`
     # timespan.
     sig { params(fun: T.proc.params(span: T.nilable(TimeSpan)).returns(TimeSpan)).returns(Pattern) }
     def with_event_span(fun)
@@ -193,21 +210,34 @@ module Cyclone
       Pattern.new(query)
     end
 
-    # Returns a new pattern, with the function applied to both the begin
-    # and end of each event timespan.
+    # Returns a new `Pattern`, with the function applied to both the `start`
+    # and `stop` of each event `TimeSpan`.
     sig { params(rational_lambda: TimeSpan::TimeLambda).returns(Pattern) }
     def with_event_time(rational_lambda)
       with_event_span(->(span) { span.with_time(rational_lambda) })
     end
 
-    # Speeds up a pattern by the given factor
+    # Returns a new `Pattern`, with the function applied to the value of
+    # each `Event`. It has the alias 'fmap'
+    sig { params(fun: T.proc.params(value: T.untyped).returns(T.untyped)).returns(Pattern) }
+    def with_value(fun)
+      query = lambda do |span|
+        self.query.call(span).map { |event| event.with_value(fun) }
+      end
+
+      Pattern.new(query)
+    end
+
+    alias_method :fmap, :with_value
+
+    # Speeds up a `Pattern` by the given `factor``
     sig { params(factor: Numeric).returns(Pattern) }
     def fast(factor)
       fast_query = with_query_time(->(t) { t * factor })
       fast_query.with_event_time(->(t) { t / factor })
     end
 
-    # Slow slows down a pattern
+    # Slow slows down a `Pattern` by the given `factor`
     sig { params(factor: Numeric).returns(Pattern) }
     def slow(factor)
       fast(1 / factor.to_f)
@@ -228,6 +258,63 @@ module Cyclone
     sig { returns(T::Array[Event]) }
     def first_cycle
       query.call(TimeSpan.new(0.to_r, 1.to_r))
+    end
+
+    # Tidal's `<*>` operator
+    sig { params(pattern_of_vals: Pattern).returns(Pattern) }
+    def app(pattern_of_vals)
+      whole_fun = lambda do |this, that|
+        return this.intersect(that) unless this.nil? || that.nil?
+      end
+      _app(whole_fun, pattern_of_vals)
+    end
+
+    # Tidal's `<*` operator
+    sig { params(pattern_of_vals: Pattern).returns(Pattern) }
+    def appl(pattern_of_vals)
+      whole_fun = lambda do |this, that|
+        return this unless this.nil? || that.nil?
+      end
+      _app(whole_fun, pattern_of_vals)
+    end
+
+    # Tidal's `*>` operator
+    sig { params(pattern_of_vals: Pattern).returns(Pattern) }
+    def appr(pattern_of_vals)
+      whole_fun = lambda do |this, that|
+        return that unless this.nil? || that.nil?
+      end
+      _app(whole_fun, pattern_of_vals)
+    end
+
+    private
+
+    # Assumes self is a pattern of functions, and given a function to
+    # resolve wholes, applies a given pattern of values to that pattern
+    # of functions.
+    sig { params(whole_fun: T.proc.params(arg0: TimeSpan, arg1: TimeSpan).returns(T.nilable(TimeSpan)), pattern_of_vals: Pattern).returns(Pattern) }
+    def _app(whole_fun, pattern_of_vals)
+      pattern_of_funs = self
+      query = lambda do |span|
+        event_funs = pattern_of_funs.query.call(span)
+        event_vals = pattern_of_vals.query.call(span)
+        apply = lambda do |event_fun, event_val|
+          intersection = event_fun.part.maybe_intersect(event_val.part)
+          unless intersection.nil?
+            Event.new(
+              whole_fun.call(event_fun.whole, event_val.whole),
+              intersection,
+              event_fun.value.call(event_val.value)
+            )
+          end
+        end
+        events = event_funs.map do |event_fun|
+          # .compact to eliminate `nil`s that may be returned from `apply`
+          event_vals.map { |event_val| apply.call(event_fun, event_val) }.compact
+        end
+        events.flatten
+      end
+      Pattern.new(query)
     end
   end
 
@@ -262,6 +349,19 @@ module Cyclone
     sig { params(fun: TimeLambda).returns(TimeSpan) }
     def with_time(fun)
       TimeSpan.new(fun.call(start), fun.call(stop))
+    end
+
+    # Intersection of two TimeSpans
+    sig { params(other: TimeSpan).returns(TimeSpan) }
+    def intersect(other)
+      TimeSpan.new([start, other.start].max, [stop, other.stop].min)
+    end
+
+    # Like intersect but returns `nil` if they don't intersect
+    sig { params(other: TimeSpan).returns(T.nilable(TimeSpan)) }
+    def maybe_intersect(other)
+      intersection = intersect(other)
+      intersection.stop > intersection.start ? intersection : nil
     end
 
     sig { returns(String) }

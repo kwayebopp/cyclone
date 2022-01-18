@@ -11,3 +11,5 @@ gem "minitest", "~> 5.0"
 
 gem "sorbet", group: :development
 gem "sorbet-runtime"
+
+gem "pry", group: :development
