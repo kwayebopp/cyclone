@@ -1,7 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
-# require "pry"
+require "pry"
 require "sorbet-runtime"
 require_relative "cyclone/version"
 
@@ -28,6 +28,7 @@ module Cyclone
     a = atom("hello")
     b = atom("world")
     c = fastcat([a, b])
+    d = stack([a, b])
 
     #  Printing the pattern
     puts("\n== TEST PATTERN ==\n")
@@ -37,15 +38,29 @@ module Cyclone
     )
 
     # Printing the pattern with fast
-    puts("\n== SAME BUT FASTER==\n")
+    puts("\n== SAME BUT FASTER ==\n")
     pattern_pretty_printing(
       pattern: c.fast(2),
       query_span: TimeSpan.new(0.to_r, 1.to_r)
     )
 
+    # Printing the pattern with stack
+    puts("\n== STACK ==\n")
+    pattern_pretty_printing(
+      pattern: d,
+      query_span: TimeSpan.new(0.to_r, 1.to_r)
+    )
+
+    # Printing the pattern with late
+    puts("\n== LATE ==\n")
+    pattern_pretty_printing(
+      pattern: c.late(0.5),
+      query_span: TimeSpan.new(0.to_r, 1.to_r)
+    )
+
     # Apply pattern of values to a pattern of functions
     puts("\n== APPLICATIVE ==\n")
-    x = fastcat([atom(->(x) { x + 1 }), atom(->(x) { x + 2 })])
+    x = fastcat([atom(->(v) { v + 1 }), atom(->(v) { v + 2 })])
     y = fastcat([atom(3), atom(4), atom(5)])
     z = x.app(y)
     pattern_pretty_printing(
@@ -93,6 +108,8 @@ module Cyclone
   def fastcat(patterns)
     slowcat(patterns).fast(patterns.size)
   end
+
+  alias_method :cat, :fastcat
 
   # Pile up patterns
   sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
@@ -190,10 +207,10 @@ module Cyclone
 
     # Returns a new `Pattern`, with the function applied to both the `start`
     # and `stop` of the the query `TimeSpan`.
-    sig { params(rational_lambda: TimeSpan::TimeLambda).returns(Pattern) }
-    def with_query_time(rational_lambda)
+    sig { params(time_lambda: TimeSpan::TimeLambda).returns(Pattern) }
+    def with_query_time(time_lambda)
       query = lambda do |span|
-        self.query.call(span.with_time(rational_lambda))
+        self.query.call(span.with_time(time_lambda))
       end
 
       Pattern.new(query)
@@ -212,9 +229,9 @@ module Cyclone
 
     # Returns a new `Pattern`, with the function applied to both the `start`
     # and `stop` of each event `TimeSpan`.
-    sig { params(rational_lambda: TimeSpan::TimeLambda).returns(Pattern) }
-    def with_event_time(rational_lambda)
-      with_event_span(->(span) { span.with_time(rational_lambda) })
+    sig { params(time_lambda: TimeSpan::TimeLambda).returns(Pattern) }
+    def with_event_time(time_lambda)
+      with_event_span(->(span) { span.with_time(time_lambda) })
     end
 
     # Returns a new `Pattern`, with the function applied to the value of
@@ -266,7 +283,8 @@ module Cyclone
       whole_fun = lambda do |this, that|
         return this.intersect(that) unless this.nil? || that.nil?
       end
-      _app(whole_fun, pattern_of_vals)
+
+      _app_whole(whole_fun, pattern_of_vals)
     end
 
     # Tidal's `<*` operator
@@ -275,7 +293,8 @@ module Cyclone
       whole_fun = lambda do |this, that|
         return this unless this.nil? || that.nil?
       end
-      _app(whole_fun, pattern_of_vals)
+
+      _app_whole(whole_fun, pattern_of_vals)
     end
 
     # Tidal's `*>` operator
@@ -284,7 +303,8 @@ module Cyclone
       whole_fun = lambda do |this, that|
         return that unless this.nil? || that.nil?
       end
-      _app(whole_fun, pattern_of_vals)
+
+      _app_whole(whole_fun, pattern_of_vals)
     end
 
     private
@@ -293,7 +313,7 @@ module Cyclone
     # resolve wholes, applies a given pattern of values to that pattern
     # of functions.
     sig { params(whole_fun: T.proc.params(arg0: TimeSpan, arg1: TimeSpan).returns(T.nilable(TimeSpan)), pattern_of_vals: Pattern).returns(Pattern) }
-    def _app(whole_fun, pattern_of_vals)
+    def _app_whole(whole_fun, pattern_of_vals)
       pattern_of_funs = self
       query = lambda do |span|
         event_funs = pattern_of_funs.query.call(span)
@@ -337,7 +357,10 @@ module Cyclone
     # Splits a timespan at cycle boundaries
     sig { returns(T::Array[TimeSpan]) }
     def span_cycles
+      # no cycles in the `TimeSpan`
       return [] if stop <= start
+
+      # `TimeSpan` is all within one cycle
       return [self] if start.sample == stop.sample
 
       next_start = start.next_sample
@@ -348,7 +371,7 @@ module Cyclone
     # Applies given function to both the begin and end time value of the timespan
     sig { params(fun: TimeLambda).returns(TimeSpan) }
     def with_time(fun)
-      TimeSpan.new(fun.call(start), fun.call(stop))
+      TimeSpan.new(fun.call(start).to_r, fun.call(stop).to_r)
     end
 
     # Intersection of two TimeSpans
