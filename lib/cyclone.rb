@@ -1,4 +1,4 @@
-# typed: strict
+# typed: false
 # frozen_string_literal: true
 
 require "pry"
@@ -79,7 +79,7 @@ module Cyclone
 
   # Repeat discrete value once per cycle
   sig { params(value: T.untyped).returns(Pattern) }
-  def atom(value)
+  def pure(value)
     query = lambda do |span|
       span.span_cycles.map do |s|
         Event.new(s.start.whole_cycle, s, value)
@@ -88,6 +88,8 @@ module Cyclone
 
     Pattern.new(query)
   end
+
+  alias_method :atom, :pure
 
   # Concatenation: combines a list of patterns, switching between them
   # successively, one per cycle.
@@ -115,7 +117,7 @@ module Cyclone
   sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
   def stack(patterns)
     query = lambda do |span|
-      patterns.map { |pattern| pattern.query.call(span) }.flatten
+      patterns.flat_map { |pattern| pattern.query.call(span) }
     end
 
     Pattern.new(query)
@@ -189,7 +191,7 @@ module Cyclone
     sig { returns(Pattern) }
     def split_queries
       query = lambda do |span|
-        span.span_cycles.map { |s| self.query.call(s) }.flatten
+        span.span_cycles.flat_map(&self.query)
       end
 
       Pattern.new(query)
@@ -307,12 +309,55 @@ module Cyclone
       _app_whole(whole_fun, pattern_of_vals)
     end
 
+    sig do
+      params(
+        fun: T.proc.params(value: T.untyped).returns(Pattern)
+      ).returns(Pattern)
+    end
+    def bind(fun)
+      whole_fun = lambda do |this, that|
+        return this.intersect(that) unless this.nil? || that.nil?
+      end
+      _bind_whole(whole_fun, fun)
+    end
+    sig do
+      params(
+        fun: T.proc.params(value: T.untyped).returns(Pattern)
+      ).returns(Pattern)
+    end
+    def inner_bind(fun)
+      whole_fun = lambda do |this, that|
+        return this unless this.nil? || that.nil?
+      end
+      _bind_whole(whole_fun, fun)
+    end
+
+    sig do
+      params(
+        fun: T.proc.params(value: T.untyped).returns(Pattern)
+      ).returns(Pattern)
+    end
+    def outer_bind(fun)
+      whole_fun = lambda do |this, that|
+        return that unless this.nil? || that.nil?
+      end
+      _bind_whole(whole_fun, fun)
+    end
+
     private
 
     # Assumes self is a pattern of functions, and given a function to
     # resolve wholes, applies a given pattern of values to that pattern
     # of functions.
-    sig { params(whole_fun: T.proc.params(arg0: TimeSpan, arg1: TimeSpan).returns(T.nilable(TimeSpan)), pattern_of_vals: Pattern).returns(Pattern) }
+    sig do
+      params(
+        whole_fun: T.proc.params(
+          arg0: TimeSpan,
+          arg1: TimeSpan
+        ).returns(T.nilable(TimeSpan)),
+        pattern_of_vals: Pattern
+      ).returns(Pattern)
+    end
     def _app_whole(whole_fun, pattern_of_vals)
       pattern_of_funs = self
       query = lambda do |span|
@@ -328,12 +373,41 @@ module Cyclone
             )
           end
         end
-        events = event_funs.map do |event_fun|
+        event_funs.flat_map do |event_fun|
           # .compact to eliminate `nil`s that may be returned from `apply`
           event_vals.map { |event_val| apply.call(event_fun, event_val) }.compact
         end
-        events.flatten
       end
+      Pattern.new(query)
+    end
+
+    sig do
+      params(
+        choose_whole: T.proc.params(
+          this_event: Event,
+          that_event: Event
+        ).returns(T.nilable(TimeSpan)),
+        fun: T.proc.params(value: T.untyped).returns(Pattern)
+      ).returns(Pattern)
+    end
+    def _bind_whole(choose_whole, fun)
+      pattern_of_values = self
+      query = lambda do |span|
+        with_whole = lambda do |this_event, that_event|
+          Event.new(
+            choose_whole.call(this_event.whole, that_event.whole),
+            that_event.part,
+            that_event.value
+          )
+        end
+        match = lambda do |event|
+          fun.call(event.value).query.call(event.part).map do |evt|
+            with_whole.call(event, evt)
+          end
+        end
+        pattern_of_values.query.call(span).flat_map(&match)
+      end
+
       Pattern.new(query)
     end
   end
