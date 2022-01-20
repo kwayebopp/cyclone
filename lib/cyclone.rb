@@ -566,26 +566,29 @@ module Cyclone
       intersection.stop > intersection.start ? intersection : nil
     end
 
+    sig { params(thing: T.any(Time, TimeSpan)).returns(TimeSpan) }
+    def self.reify(thing)
+      return T.cast(thing, TimeSpan) if thing.instance_of?(TimeSpan)
+
+      is_time = thing.instance_of?(Integer) || thing.instance_of?(Float) || thing.instance_of?(Rational)
+      if is_time
+        time = T.cast(thing, Time)
+        return TimeSpan.new(time, time)
+      end
+
+      raise ArgumentError, "Cannot reify #{thing.class} as TimeSpan"
+    end
+
     sig { params(other: T.untyped).returns(TimeSpan) }
     def +(other)
-      if other.instance_of?(Integer) || other.instance_of?(Float) || other.instance_of?(Rational)
-        TimeSpan.new(start + other, stop + other)
-      elsif other.instance_of?(TimeSpan)
-        TimeSpan.new(start + other.start, stop + other.stop)
-      else
-        raise ArgumentError, "Cannot add #{other.class} to TimeSpan"
-      end
+      other_timespan = TimeSpan.reify(other)
+      TimeSpan.new(start + other_timespan.start, stop + other_timespan.stop)
     end
 
     sig { params(other: T.untyped).returns(TimeSpan) }
     def -(other)
-      if other.instance_of?(Integer) || other.instance_of?(Float) || other.instance_of?(Rational)
-        TimeSpan.new(start - other, stop - other)
-      elsif other.instance_of?(TimeSpan)
-        TimeSpan.new(start - other.start, stop - other.stop)
-      else
-        raise ArgumentError, "Cannot add #{other.class} to TimeSpan"
-      end
+      other_timespan = TimeSpan.reify(other)
+      TimeSpan.new(start - other_timespan.start, stop - other_timespan.stop)
     end
 
     sig { returns(String) }

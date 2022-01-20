@@ -1735,6 +1735,17 @@
 # uninitialized constant CSV
 # uninitialized constant CSV
 # wrong constant name json_creatable?
+# uninitialized constant CodeRay::Encoders::Terminal::DEFAULT_OPTIONS
+# uninitialized constant CodeRay::Scanners::Java::DEFAULT_OPTIONS
+# uninitialized constant CodeRay::Scanners::Java::Id
+# uninitialized constant CodeRay::Scanners::Java::KINDS_NOT_LOC
+# uninitialized constant CodeRay::Scanners::Java::SCANNER_STATE_INFO
+# uninitialized constant CodeRay::Scanners::Java::SCAN_ERROR_MESSAGE
+# uninitialized constant CodeRay::Scanners::Java::Version
+# Did you mean?  CodeRay::VERSION
+# uninitialized constant CodeRay::Scanners::Scanner::Id
+# uninitialized constant CodeRay::Scanners::Scanner::Version
+# Did you mean?  CodeRay::VERSION
 # uninitialized constant Continuation
 # uninitialized constant Continuation
 # uninitialized constant Coverage
@@ -1885,8 +1896,11 @@
 # Did you mean?  FileUtils::VERSION
 # uninitialized constant Find
 # uninitialized constant Find
-# uninitialized constant Forwardable
-# uninitialized constant Forwardable
+# wrong constant name _compile_method
+# wrong constant name _delegator_method
+# wrong constant name _valid_method?
+# wrong constant name debug
+# wrong constant name debug=
 # wrong constant name receiver
 # wrong constant name garbage_collect
 # wrong constant name verify_transient_heap_internal_consistency
@@ -1900,8 +1914,6 @@
 # wrong constant name <Class:SpecFetcher>
 # wrong constant name <Class:SpecificationPolicy>
 # wrong constant name <Class:UninstallError>
-# wrong constant name <=>
-# wrong constant name pretty_print
 # wrong constant name <static-init>
 # uninitialized constant Gem::Ext::ExtConfBuilder::CHDIR_MONITOR
 # uninitialized constant Gem::Ext::ExtConfBuilder::CHDIR_MUTEX
@@ -1920,7 +1932,6 @@
 # wrong constant name spec
 # wrong constant name spec=
 # wrong constant name <static-init>
-# wrong constant name pretty_print
 # wrong constant name <Class:DigestIO>
 # wrong constant name <Class:FileSource>
 # wrong constant name <Class:IOSource>
@@ -2010,33 +2021,16 @@
 # wrong constant name uri=
 # wrong constant name <static-init>
 # wrong constant name <static-init>
-# wrong constant name pretty_print
 # wrong constant name <Class:CorrectHashForLambdaOperator>
 # wrong constant name <Class:OrderIndependentComparison>
-# wrong constant name pretty_print
 # wrong constant name hash
 # wrong constant name <static-init>
 # wrong constant name ==
 # wrong constant name _requirements_sorted?
 # wrong constant name _with_sorted_requirements
 # wrong constant name <static-init>
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
 # wrong constant name <static-init>
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
-# wrong constant name pretty_print
 # wrong constant name <static-init>
-# wrong constant name pretty_print
-# wrong constant name pretty_print
 # wrong constant name add_edge_no_circular
 # wrong constant name add_vertex
 # wrong constant name delete_edge
@@ -2049,7 +2043,6 @@
 # wrong constant name tag
 # wrong constant name <static-init>
 # uninitialized constant Gem::Resolver::Molinillo::DependencyGraph::Log::Elem
-# wrong constant name pretty_print
 # wrong constant name suggestion
 # wrong constant name suggestion=
 # wrong constant name <static-init>
@@ -2141,8 +2134,6 @@
 # wrong constant name trust_dir
 # wrong constant name trusted_certificates
 # wrong constant name write
-# wrong constant name <=>
-# wrong constant name pretty_print
 # wrong constant name available_specs
 # wrong constant name detect
 # wrong constant name initialize
@@ -2160,7 +2151,6 @@
 # wrong constant name <=>
 # uninitialized constant Gem::Specification::GENERICS
 # uninitialized constant Gem::Specification::GENERIC_CACHE
-# wrong constant name pretty_print
 # wrong constant name removed_method_calls
 # wrong constant name to_ruby
 # wrong constant name initialize
@@ -2193,8 +2183,6 @@
 # wrong constant name spec
 # wrong constant name spec=
 # wrong constant name <static-init>
-# wrong constant name <=>
-# wrong constant name pretty_print
 # wrong constant name activated_gem_paths
 # uninitialized constant GetoptLong
 # uninitialized constant GetoptLong
@@ -2219,14 +2207,22 @@
 # uninitialized constant IRB
 # Did you mean?  ERB
 # wrong constant name to_bn
+# wrong constant name escape_slash
+# wrong constant name escape_slash=
+# wrong constant name escape_slash?
 # wrong constant name from_state
 # wrong constant name initialize
+# wrong constant name create_fast_state
+# wrong constant name create_pretty_state
+# wrong constant name load_file
+# wrong constant name load_file!
 # uninitialized constant Jacobian
 # uninitialized constant Jacobian
 # uninitialized constant Kconv
 # uninitialized constant Kconv
 # wrong constant name itself
 # wrong constant name object_id
+# wrong constant name pretty_inspect
 # wrong constant name then
 # wrong constant name yield_self
 # wrong constant name at_exit
@@ -2323,7 +2319,17 @@
 # uninitialized constant Newton
 # uninitialized constant Newton
 # wrong constant name <static-init>
+# uninitialized constant BINARY_OPERATOR_PATTERN
+# Did you mean?  UNARY_OPERATOR_PATTERN
+# uninitialized constant BINARY_RUBY_OPERATORS
+# Did you mean?  UNARY_RUBY_OPERATORS
 # uninitialized constant RUBYGEMS_ACTIVATION_MONITOR
+# uninitialized constant UNARY_OPERATOR_PATTERN
+# Did you mean?  BINARY_OPERATOR_PATTERN
+# uninitialized constant UNARY_OPERATOR_PATTERN_WITHOUT_AT_SIGN
+# uninitialized constant UNARY_RUBY_OPERATORS
+# Did you mean?  BINARY_RUBY_OPERATORS
+# uninitialized constant VALID_SUPERATOR
 # wrong constant name <Class:Object>
 # uninitialized constant Observable
 # uninitialized constant Observable
@@ -2351,17 +2357,15 @@
 # wrong constant name additional=
 # uninitialized constant Opus
 # uninitialized constant Opus
-# uninitialized constant PP
-# uninitialized constant PP
 # uninitialized constant PStore
 # uninitialized constant PStore
 # uninitialized constant PTY
+# Did you mean?  Pry
 # uninitialized constant PTY
+# Did you mean?  Pry
 # uninitialized constant PackageSpec
 # uninitialized constant PackageSpec
 # wrong constant name <Class:PackageSpec>
-# uninitialized constant PrettyPrint
-# uninitialized constant PrettyPrint
 # uninitialized constant Prime
 # uninitialized constant Prime
 # wrong constant name <<
@@ -2389,6 +2393,16 @@
 # uninitialized constant Proc8
 # uninitialized constant Proc9
 # uninitialized constant Proc9
+# uninitialized constant Pry::BasicObject::RUBYGEMS_ACTIVATION_MONITOR
+# uninitialized constant Pry::Command::COLORS
+# uninitialized constant Pry::Command::Ls::COLORS
+# Did you mean?  Pry::Command::COLORS
+# uninitialized constant Pry::Command::Ls::VOID_VALUE
+# Did you mean?  Pry::Command::VOID_VALUE
+# uninitialized constant Pry::Command::Wtf::COLORS
+# Did you mean?  Pry::Command::COLORS
+# uninitialized constant Pry::Command::Wtf::VOID_VALUE
+# Did you mean?  Pry::Command::VOID_VALUE
 # uninitialized constant Psych
 # uninitialized constant Psych
 # uninitialized constant RDoc
@@ -2433,6 +2447,7 @@
 # uninitialized constant Rinda
 # uninitialized constant Ripper
 # uninitialized constant Ripper
+# wrong constant name pretty_print_children
 # wrong constant name <static-init>
 # wrong constant name enabled?
 # wrong constant name pause
@@ -2453,8 +2468,6 @@
 # wrong constant name reset
 # uninitialized constant Shell
 # uninitialized constant Shell
-# uninitialized constant SingleForwardable
-# uninitialized constant SingleForwardable
 # wrong constant name _dump
 # wrong constant name clone
 # wrong constant name dup
@@ -2467,6 +2480,9 @@
 # wrong constant name shellescape
 # wrong constant name shellsplit
 # wrong constant name set_encoding_by_bom
+# wrong constant name bol?
+# wrong constant name fixed_anchor?
+# wrong constant name initialize
 # wrong constant name deconstruct
 # wrong constant name deconstruct_keys
 # wrong constant name filter

@@ -2554,6 +2554,155 @@ class Class
   def json_creatable?(); end
 end
 
+module CodeRay
+  CODERAY_PATH = ::T.let(nil, ::T.untyped)
+  TokenKinds = ::T.let(nil, ::T.untyped)
+  VERSION = ::T.let(nil, ::T.untyped)
+end
+
+class CodeRay::Encoders::Encoder
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+end
+
+CodeRay::Encoders::Encoder::PLUGIN_HOST = CodeRay::Encoders
+
+class CodeRay::Encoders::HTML
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+  FILE_EXTENSION = ::T.let(nil, ::T.untyped)
+  HTML_ESCAPE = ::T.let(nil, ::T.untyped)
+  HTML_ESCAPE_PATTERN = ::T.let(nil, ::T.untyped)
+  TOKEN_KIND_TO_INFO = ::T.let(nil, ::T.untyped)
+  TRANSPARENT_TOKEN_KINDS = ::T.let(nil, ::T.untyped)
+end
+
+class CodeRay::Encoders::HTML::CSS
+  CSS_CLASS_PATTERN = ::T.let(nil, ::T.untyped)
+end
+
+module CodeRay::Encoders::HTML::Output
+  DIV = ::T.let(nil, ::T.untyped)
+  PAGE = ::T.let(nil, ::T.untyped)
+  SPAN = ::T.let(nil, ::T.untyped)
+  TABLE = ::T.let(nil, ::T.untyped)
+end
+
+class CodeRay::Encoders::Terminal
+  TOKEN_COLORS = ::T.let(nil, ::T.untyped)
+end
+
+module CodeRay::FileType
+  TypeFromExt = ::T.let(nil, ::T.untyped)
+  TypeFromName = ::T.let(nil, ::T.untyped)
+  TypeFromShebang = ::T.let(nil, ::T.untyped)
+end
+
+module CodeRay::PluginHost
+  PLUGIN_HOSTS = ::T.let(nil, ::T.untyped)
+  PLUGIN_HOSTS_BY_ID = ::T.let(nil, ::T.untyped)
+end
+
+class CodeRay::Scanners::Java
+  CONSTANTS = ::T.let(nil, ::T.untyped)
+  DIRECTIVES = ::T.let(nil, ::T.untyped)
+  ESCAPE = ::T.let(nil, ::T.untyped)
+  IDENT = ::T.let(nil, ::T.untyped)
+  IDENT_KIND = ::T.let(nil, ::T.untyped)
+  KEYWORDS = ::T.let(nil, ::T.untyped)
+  MAGIC_VARIABLES = ::T.let(nil, ::T.untyped)
+  RESERVED = ::T.let(nil, ::T.untyped)
+  STRING_CONTENT_PATTERN = ::T.let(nil, ::T.untyped)
+  TYPES = ::T.let(nil, ::T.untyped)
+  UNICODE_ESCAPE = ::T.let(nil, ::T.untyped)
+end
+
+module CodeRay::Scanners::Java::BuiltinTypes
+  List = ::T.let(nil, ::T.untyped)
+end
+
+module CodeRay::Scanners::Ruby::Patterns
+  BINARY = ::T.let(nil, ::T.untyped)
+  CHARACTER = ::T.let(nil, ::T.untyped)
+  CLASS_VARIABLE = ::T.let(nil, ::T.untyped)
+  CONTROL_META_ESCAPE = ::T.let(nil, ::T.untyped)
+  DATA = ::T.let(nil, ::T.untyped)
+  DECIMAL = ::T.let(nil, ::T.untyped)
+  ESCAPE = ::T.let(nil, ::T.untyped)
+  EXPONENT = ::T.let(nil, ::T.untyped)
+  FANCY_STRING_INTERPRETED = ::T.let(nil, ::T.untyped)
+  FANCY_STRING_KIND = ::T.let(nil, ::T.untyped)
+  FANCY_STRING_START = ::T.let(nil, ::T.untyped)
+  FLOAT_OR_INT = ::T.let(nil, ::T.untyped)
+  FLOAT_SUFFIX = ::T.let(nil, ::T.untyped)
+  GLOBAL_VARIABLE = ::T.let(nil, ::T.untyped)
+  HEREDOC_OPEN = ::T.let(nil, ::T.untyped)
+  HEXADECIMAL = ::T.let(nil, ::T.untyped)
+  IDENT = ::T.let(nil, ::T.untyped)
+  IDENT_KIND = ::T.let(nil, ::T.untyped)
+  INSTANCE_VARIABLE = ::T.let(nil, ::T.untyped)
+  KEYWORDS = ::T.let(nil, ::T.untyped)
+  KEYWORDS_EXPECTING_VALUE = ::T.let(nil, ::T.untyped)
+  KEYWORD_NEW_STATE = ::T.let(nil, ::T.untyped)
+  METHOD_AFTER_DOT = ::T.let(nil, ::T.untyped)
+  METHOD_NAME = ::T.let(nil, ::T.untyped)
+  METHOD_NAME_EX = ::T.let(nil, ::T.untyped)
+  METHOD_NAME_OPERATOR = ::T.let(nil, ::T.untyped)
+  METHOD_NAME_OR_SYMBOL = ::T.let(nil, ::T.untyped)
+  METHOD_SUFFIX = ::T.let(nil, ::T.untyped)
+  NUMERIC = ::T.let(nil, ::T.untyped)
+  OBJECT_VARIABLE = ::T.let(nil, ::T.untyped)
+  OCTAL = ::T.let(nil, ::T.untyped)
+  PREDEFINED_CONSTANTS = ::T.let(nil, ::T.untyped)
+  PREFIX_VARIABLE = ::T.let(nil, ::T.untyped)
+  QUOTE_TO_TYPE = ::T.let(nil, ::T.untyped)
+  REGEXP_MODIFIERS = ::T.let(nil, ::T.untyped)
+  RUBYDOC = ::T.let(nil, ::T.untyped)
+  RUBYDOC_OR_DATA = ::T.let(nil, ::T.untyped)
+  SIMPLE_ESCAPE = ::T.let(nil, ::T.untyped)
+  SYMBOL = ::T.let(nil, ::T.untyped)
+  VALUE_FOLLOWS = ::T.let(nil, ::T.untyped)
+  VARIABLE = ::T.let(nil, ::T.untyped)
+end
+
+class CodeRay::Scanners::Ruby::StringState
+  CLOSING_PAREN = ::T.let(nil, ::T.untyped)
+  STRING_PATTERN = ::T.let(nil, ::T.untyped)
+end
+
+class CodeRay::Scanners::Scanner
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+  KINDS_NOT_LOC = ::T.let(nil, ::T.untyped)
+  SCANNER_STATE_INFO = ::T.let(nil, ::T.untyped)
+  SCAN_ERROR_MESSAGE = ::T.let(nil, ::T.untyped)
+end
+
+CodeRay::Scanners::Scanner::PLUGIN_HOST = CodeRay::Scanners
+
+class CodeRay::Styles::Style
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+end
+
+CodeRay::Styles::Style::PLUGIN_HOST = CodeRay::Styles
+
+class Cyclone::Event
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
+class Cyclone::Pattern
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
+class Cyclone::TimeSpan
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
+module Cyclone
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
 class Delegator
   RUBYGEMS_ACTIVATION_MONITOR = ::T.let(nil, ::T.untyped)
 end
@@ -2966,6 +3115,22 @@ class Float
   include ::JSON::Ext::Generator::GeneratorMethods::Float
 end
 
+module Forwardable
+  VERSION = ::T.let(nil, ::T.untyped)
+end
+
+module Forwardable
+  def self._compile_method(src, file, line); end
+
+  def self._delegator_method(obj, accessor, method, ali); end
+
+  def self._valid_method?(method); end
+
+  def self.debug(); end
+
+  def self.debug=(debug); end
+end
+
 class FrozenError
   def receiver(); end
 end
@@ -2983,10 +3148,6 @@ module Gem
   RbConfigPriorities = ::T.let(nil, ::T.untyped)
   RubyGemsVersion = ::T.let(nil, ::T.untyped)
   UNTAINT = ::T.let(nil, ::T.untyped)
-end
-
-class Gem::Dependency
-  def pretty_print(q); end
 end
 
 class Gem::Exception
@@ -3037,10 +3198,6 @@ class Gem::Installer::FakePackage
 end
 
 class Gem::Installer::FakePackage
-end
-
-class Gem::List
-  def pretty_print(q); end
 end
 
 class Gem::Package
@@ -3257,14 +3414,9 @@ class Gem::Request
   extend ::Gem::Text
 end
 
-class Gem::RequestSet
-  def pretty_print(q); end
-end
-
 class Gem::Requirement
   include ::Gem::Requirement::OrderIndependentComparison
   include ::Gem::Requirement::CorrectHashForLambdaOperator
-  def pretty_print(q); end
 end
 
 module Gem::Requirement::CorrectHashForLambdaOperator
@@ -3285,73 +3437,16 @@ end
 module Gem::Requirement::OrderIndependentComparison
 end
 
-class Gem::Resolver::APISet
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::APISpecification
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::ActivationRequest
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::BestSet
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::Conflict
-  def pretty_print(q); end
-end
-
 class Gem::Resolver::CurrentSet
 end
 
 class Gem::Resolver::CurrentSet
 end
 
-class Gem::Resolver::DependencyRequest
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::GitSet
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::GitSpecification
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::IndexSet
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::IndexSpecification
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::InstalledSpecification
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::InstallerSet
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::LocalSpecification
-  def pretty_print(q); end
-end
-
 class Gem::Resolver::LocalSpecification
 end
 
-class Gem::Resolver::LockSet
-  def pretty_print(q); end
-end
-
-class Gem::Resolver::LockSpecification
-  def pretty_print(q); end
+class Gem::Resolver::LocalSpecification
 end
 
 class Gem::Resolver::Molinillo::DependencyGraph::Log
@@ -3378,10 +3473,6 @@ end
 
 class Gem::Resolver::Molinillo::DependencyGraph::Log
   extend ::Enumerable
-end
-
-class Gem::Resolver::VendorSet
-  def pretty_print(q); end
 end
 
 class Gem::RuntimeRequirementNotMetError
@@ -3596,10 +3687,6 @@ module Gem::Security
   def self.write(pemmable, path, permissions=T.unsafe(nil), passphrase=T.unsafe(nil), cipher=T.unsafe(nil)); end
 end
 
-class Gem::Source
-  def pretty_print(q); end
-end
-
 class Gem::SpecFetcher
   include ::Gem::UserInteraction
   include ::Gem::DefaultUserInteraction
@@ -3636,8 +3723,6 @@ end
 class Gem::Specification
   include ::Bundler::MatchPlatform
   include ::Bundler::GemHelpers
-  def pretty_print(q); end
-
   def removed_method_calls(); end
 
   def to_ruby(); end
@@ -3727,10 +3812,6 @@ end
 
 Gem::UnsatisfiableDepedencyError = Gem::UnsatisfiableDependencyError
 
-class Gem::Version
-  def pretty_print(q); end
-end
-
 Gem::Version::Requirement = Gem::Requirement
 
 module Gem
@@ -3789,6 +3870,14 @@ class Integer
 end
 
 class JSON::Ext::Generator::State
+  def escape_slash(); end
+
+  def escape_slash=(escape_slash); end
+
+  def escape_slash?(); end
+end
+
+class JSON::Ext::Generator::State
   def self.from_state(arg); end
 end
 
@@ -3802,10 +3891,22 @@ JSON::State = JSON::Ext::Generator::State
 
 JSON::UnparserError = JSON::GeneratorError
 
+module JSON
+  def self.create_fast_state(); end
+
+  def self.create_pretty_state(); end
+
+  def self.load_file(filespec, opts=T.unsafe(nil)); end
+
+  def self.load_file!(filespec, opts=T.unsafe(nil)); end
+end
+
 module Kernel
   def itself(); end
 
   def object_id(); end
+
+  def pretty_inspect(); end
 
   def then(); end
 
@@ -3818,6 +3919,15 @@ end
 
 class KeyError
   include ::DidYouMean::Correctable
+end
+
+module MethodSource
+  VERSION = ::T.let(nil, ::T.untyped)
+end
+
+module MethodSource::CodeHelpers::IncompleteExpression
+  GENERIC_REGEXPS = ::T.let(nil, ::T.untyped)
+  RBX_ONLY_REGEXPS = ::T.let(nil, ::T.untyped)
 end
 
 MiniTest = Minitest
@@ -3915,6 +4025,8 @@ end
 
 class Object
   include ::JSON::Ext::Generator::GeneratorMethods::Object
+  include ::PP::ObjectMixin
+  include ::SuperatorMixin
   ARGF = ::T.let(nil, ::T.untyped)
   ARGV = ::T.let(nil, ::T.untyped)
   CROSS_COMPILING = ::T.let(nil, ::T.untyped)
@@ -3962,6 +4074,117 @@ end
 
 module Process
   CLOCK_TAI = ::T.let(nil, ::T.untyped)
+end
+
+class Pry
+  BINDING_METHOD_IMPL = ::T.let(nil, ::T.untyped)
+  Commands = ::T.let(nil, ::T.untyped)
+  EMPTY_COMPLETIONS = ::T.let(nil, ::T.untyped)
+  HAS_SAFE_LEVEL = ::T.let(nil, ::T.untyped)
+  LOCAL_RC_FILE = ::T.let(nil, ::T.untyped)
+  VERSION = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::BasicObject
+  ENV = ::T.let(nil, ::T.untyped)
+end
+
+Pry::BasicObject::Dir = Dir
+
+Pry::BasicObject::File = File
+
+Pry::BasicObject::Kernel = Kernel
+
+Pry::BasicObject::LoadError = LoadError
+
+Pry::BasicObject::Pry = Pry
+
+class Pry::Code
+  extend ::MethodSource::CodeHelpers
+end
+
+class Pry::CodeFile
+  DEFAULT_EXT = ::T.let(nil, ::T.untyped)
+  EXTENSIONS = ::T.let(nil, ::T.untyped)
+  FILES = ::T.let(nil, ::T.untyped)
+  INITIAL_PWD = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Command
+  VOID_VALUE = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Command::Ls
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Command::Ls::Constants
+  DEPRECATED_CONSTANTS = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Command::Ls::Globals
+  BUILTIN_GLOBALS = ::T.let(nil, ::T.untyped)
+  PSEUDO_GLOBALS = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Command::Wtf
+  RUBY_FRAME_PATTERN = ::T.let(nil, ::T.untyped)
+end
+
+module Pry::Helpers::DocumentationHelpers
+  YARD_TAGS = ::T.let(nil, ::T.untyped)
+end
+
+module Pry::Helpers::Text
+  COLORS = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Indent
+  IGNORE_TOKENS = ::T.let(nil, ::T.untyped)
+  MIDWAY_TOKENS = ::T.let(nil, ::T.untyped)
+  OPEN_TOKENS = ::T.let(nil, ::T.untyped)
+  OPTIONAL_DO_TOKENS = ::T.let(nil, ::T.untyped)
+  SINGLELINE_TOKENS = ::T.let(nil, ::T.untyped)
+  SPACES = ::T.let(nil, ::T.untyped)
+  STATEMENT_END_TOKENS = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::InputCompleter
+  ARRAY_REGEXP = ::T.let(nil, ::T.untyped)
+  CONSTANT_OR_METHOD_REGEXP = ::T.let(nil, ::T.untyped)
+  CONSTANT_REGEXP = ::T.let(nil, ::T.untyped)
+  GLOBALVARIABLE_REGEXP = ::T.let(nil, ::T.untyped)
+  HEX_REGEXP = ::T.let(nil, ::T.untyped)
+  NUMERIC_REGEXP = ::T.let(nil, ::T.untyped)
+  PROC_OR_HASH_REGEXP = ::T.let(nil, ::T.untyped)
+  REGEX_REGEXP = ::T.let(nil, ::T.untyped)
+  RESERVED_WORDS = ::T.let(nil, ::T.untyped)
+  SYMBOL_METHOD_CALL_REGEXP = ::T.let(nil, ::T.untyped)
+  SYMBOL_REGEXP = ::T.let(nil, ::T.untyped)
+  TOPLEVEL_LOOKUP_REGEXP = ::T.let(nil, ::T.untyped)
+  VARIABLE_REGEXP = ::T.let(nil, ::T.untyped)
+  WORD_ESCAPE_STR = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Inspector
+  MAP = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::ObjectPath
+  SPECIAL_TERMS = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Output
+  DEFAULT_SIZE = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Slop
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+  VERSION = ::T.let(nil, ::T.untyped)
+end
+
+class Pry::Slop::Option
+  DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
 end
 
 module Rake
@@ -4049,12 +4272,21 @@ class Range
   def to_a(); end
 end
 
+class Rational
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
 module RbConfig
   def self.expand(val, config=T.unsafe(nil)); end
 
   def self.fire_update!(key, val, mkconf=T.unsafe(nil), conf=T.unsafe(nil)); end
 
   def self.ruby(); end
+end
+
+class RubyVM::AbstractSyntaxTree::Node
+  def pretty_print_children(q, names=T.unsafe(nil)); end
 end
 
 module RubyVM::MJIT
@@ -4067,6 +4299,8 @@ module RubyVM::MJIT
 
   def self.resume(); end
 end
+
+ScanError = StringScanner::Error
 
 class Set
   def ==(other); end
@@ -4124,13 +4358,19 @@ class String
   def shellsplit(); end
 end
 
-class String
-  extend ::JSON::Ext::Generator::GeneratorMethods::String::Extend
-end
-
 class StringIO
   def set_encoding_by_bom(); end
   VERSION = ::T.let(nil, ::T.untyped)
+end
+
+class StringScanner
+  def bol?(); end
+
+  def fixed_anchor?(); end
+
+  def initialize(*arg); end
+  Id = ::T.let(nil, ::T.untyped)
+  Version = ::T.let(nil, ::T.untyped)
 end
 
 class Struct
@@ -4146,6 +4386,22 @@ Struct::Group = Etc::Group
 Struct::Passwd = Etc::Passwd
 
 Struct::Tms = Process::Tms
+
+module SuperatorMixin
+  BINARY_OPERATOR_PATTERN = ::T.let(nil, ::T.untyped)
+  BINARY_RUBY_OPERATORS = ::T.let(nil, ::T.untyped)
+  UNARY_OPERATOR_PATTERN = ::T.let(nil, ::T.untyped)
+  UNARY_OPERATOR_PATTERN_WITHOUT_AT_SIGN = ::T.let(nil, ::T.untyped)
+  UNARY_RUBY_OPERATORS = ::T.let(nil, ::T.untyped)
+  VALID_SUPERATOR = ::T.let(nil, ::T.untyped)
+end
+
+module Superators
+  MAJOR = ::T.let(nil, ::T.untyped)
+  MINOR = ::T.let(nil, ::T.untyped)
+  TINY = ::T.let(nil, ::T.untyped)
+  VERSION = ::T.let(nil, ::T.untyped)
+end
 
 class Tempfile
   def _close(); end
