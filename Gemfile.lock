@@ -19,6 +19,7 @@ GEM
       sorbet-static (= 0.5.9531)
     sorbet-runtime (0.5.9531)
     sorbet-static (0.5.9531-x86_64-linux)
+    superators19 (0.9.3)
 
 PLATFORMS
   x86_64-linux
@@ -30,6 +31,7 @@ DEPENDENCIES
   rake (~> 13.0)
   sorbet
   sorbet-runtime
+  superators19
 
 BUNDLED WITH
    2.2.19

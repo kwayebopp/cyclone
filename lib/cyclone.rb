@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 require "pry"
@@ -12,8 +12,6 @@ module Cyclone
 
   class Error < StandardError; end
 
-  module_function
-
   # Better formatting for printing Tidal Patterns
   sig { params(pattern: Pattern, query_span: TimeSpan).void }
   def pattern_pretty_printing(pattern:, query_span:)
@@ -24,38 +22,52 @@ module Cyclone
   end
 
   sig { returns(T.untyped) }
-  def check_test
+  def smoke_test
     a = atom("hello")
     b = atom("world")
     c = fastcat([a, b])
     d = stack([a, b])
 
     #  Printing the pattern
-    puts("\n== TEST PATTERN ==\n")
+    puts "\n== TEST PATTERN ==\n"
+    puts 'Like: "hello world" (over two cycles)'
     pattern_pretty_printing(
       pattern: c,
-      query_span: TimeSpan.new(0.to_r, 2.to_r)
+      query_span: TimeSpan.new(0, 2)
     )
 
     # Printing the pattern with fast
-    puts("\n== SAME BUT FASTER ==\n")
+    puts "\n== SAME BUT FASTER ==\n"
+    puts 'Like: fast 4 "hello world"'
     pattern_pretty_printing(
-      pattern: c.fast(2),
-      query_span: TimeSpan.new(0.to_r, 1.to_r)
+      # recall that `_fast` takes a `factor` as an argument
+      #  and returns a pattern
+      pattern: c._fast(2),
+      query_span: TimeSpan.new(0, 1)
+    )
+
+    # Printing the pattern with patterned fast
+    puts "\n== SAME BUT FASTER ==\n"
+    puts 'Like: fast "2 4" "hello world"'
+    pattern_pretty_printing(
+      # recall that fast (no underscore) takes a `pattern_of_factors` as an argument
+      # and returns a pattern
+      pattern: c.fast(fastcat([atom(2), atom(4)])),
+      query_span: TimeSpan.new(0, 1)
     )
 
     # Printing the pattern with stack
     puts("\n== STACK ==\n")
     pattern_pretty_printing(
       pattern: d,
-      query_span: TimeSpan.new(0.to_r, 1.to_r)
+      query_span: TimeSpan.new(0, 1)
     )
 
     # Printing the pattern with late
     puts("\n== LATE ==\n")
     pattern_pretty_printing(
       pattern: c.late(0.5),
-      query_span: TimeSpan.new(0.to_r, 1.to_r)
+      query_span: TimeSpan.new(0, 1)
     )
 
     # Apply pattern of values to a pattern of functions
@@ -65,16 +77,48 @@ module Cyclone
     z = x.app(y)
     pattern_pretty_printing(
       pattern: z,
-      query_span: TimeSpan.new(0.to_r, 1.to_r)
+      query_span: TimeSpan.new(0, 1)
     )
+
+    # Add number patterns together
+    print("\n== ADDITION ==\n")
+    numbers = fastcat([2, 3, 4, 5].map { |v| atom(v) })
+    more_numbers = fastcat([atom(10), atom(100)])
+    pattern_pretty_printing(
+      pattern: numbers + more_numbers,
+      query_span: TimeSpan.new(0, 1)
+    )
+  end
+
+  # Identity function
+  sig { returns(T.proc.params(value: T.untyped).returns(T.untyped)) }
+  def id
+    ->(value) { value }
   end
 
   # Fundamental patterns
 
-  # Should this be a value or a function?
   sig { returns(Pattern) }
   def silence
     Pattern.new(->(_span) { [] })
+  end
+
+  sig { params(value: T.untyped).returns(Pattern) }
+  def steady(value)
+    signal ->(_t) { value }
+  end
+
+  sig { params(fun: T.proc.params(time: Rational).returns(T.untyped)).returns(Pattern) }
+  def signal(fun)
+    query = lambda do |span|
+      [Event.new(
+        nil,
+        span,
+        fun.call(span.start + (span.stop - span.start) / 2)
+      )]
+    end
+
+    Pattern.new(query)
   end
 
   # Repeat discrete value once per cycle
@@ -88,8 +132,9 @@ module Cyclone
 
     Pattern.new(query)
   end
-
   alias_method :atom, :pure
+
+  module_function :atom, :pure, :id
 
   # Concatenation: combines a list of patterns, switching between them
   # successively, one per cycle.
@@ -108,9 +153,8 @@ module Cyclone
   # pattern into one cycle
   sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
   def fastcat(patterns)
-    slowcat(patterns).fast(patterns.size)
+    slowcat(patterns)._fast(patterns.size)
   end
-
   alias_method :cat, :fastcat
 
   # Pile up patterns
@@ -246,20 +290,25 @@ module Cyclone
 
       Pattern.new(query)
     end
-
     alias_method :fmap, :with_value
 
     # Speeds up a `Pattern` by the given `factor``
     sig { params(factor: Numeric).returns(Pattern) }
-    def fast(factor)
+    def _fast(factor)
       fast_query = with_query_time(->(t) { t * factor })
       fast_query.with_event_time(->(t) { t / factor })
+    end
+
+    # Speeds up a `Pattern` using the given `pattern_of_factors`.
+    sig { params(pattern_of_factors: Pattern).returns(Pattern) }
+    def fast(pattern_of_factors)
+      pattern_of_factors.fmap(->(factor) { _fast(factor) }).outer_join
     end
 
     # Slow slows down a `Pattern` by the given `factor`
     sig { params(factor: Numeric).returns(Pattern) }
     def slow(factor)
-      fast(1 / factor.to_f)
+      _fast(1 / factor.to_f)
     end
 
     # Equivalent of Tidal's `<~` operator
@@ -276,7 +325,14 @@ module Cyclone
 
     sig { returns(T::Array[Event]) }
     def first_cycle
-      query.call(TimeSpan.new(0.to_r, 1.to_r))
+      query.call(TimeSpan.new(0, 1))
+    end
+
+    sig { params(thing: T.untyped).returns(Pattern) }
+    def self.reify(thing)
+      return thing if thing.instance_of?(Pattern)
+
+      Cyclone.pure(thing)
     end
 
     # Tidal's `<*>` operator
@@ -290,6 +346,7 @@ module Cyclone
     end
 
     # Tidal's `<*` operator
+    # we'll use `<<` for now
     sig { params(pattern_of_vals: Pattern).returns(Pattern) }
     def appl(pattern_of_vals)
       whole_fun = lambda do |this, that|
@@ -298,8 +355,10 @@ module Cyclone
 
       _app_whole(whole_fun, pattern_of_vals)
     end
+    alias_method :<<, :appl
 
     # Tidal's `*>` operator
+    # we'll use `>>` for now
     sig { params(pattern_of_vals: Pattern).returns(Pattern) }
     def appr(pattern_of_vals)
       whole_fun = lambda do |this, that|
@@ -308,6 +367,7 @@ module Cyclone
 
       _app_whole(whole_fun, pattern_of_vals)
     end
+    alias_method :>>, :appl
 
     sig do
       params(
@@ -320,6 +380,14 @@ module Cyclone
       end
       _bind_whole(whole_fun, fun)
     end
+
+    # Flattens a pattern of patterns into a pattern, where wholes are
+    # the intersection of matched inner and outer events.
+    sig { returns(Pattern) }
+    def join
+      bind(Cyclone.id)
+    end
+
     sig do
       params(
         fun: T.proc.params(value: T.untyped).returns(Pattern)
@@ -332,6 +400,13 @@ module Cyclone
       _bind_whole(whole_fun, fun)
     end
 
+    # Flattens a pattern of patterns into a pattern, where wholes are
+    # taken from inner events.
+    sig { returns(Pattern) }
+    def inner_join
+      inner_bind(Cyclone.id)
+    end
+
     sig do
       params(
         fun: T.proc.params(value: T.untyped).returns(Pattern)
@@ -342,6 +417,35 @@ module Cyclone
         return that unless this.nil? || that.nil?
       end
       _bind_whole(whole_fun, fun)
+    end
+
+    # Flattens a pattern of patterns into a pattern, where wholes are
+    #  taken from outer events.
+    sig { returns(Pattern) }
+    def outer_join
+      outer_bind(Cyclone.id)
+    end
+
+    sig { params(other: T.untyped).returns(Pattern) }
+    def +(other)
+      fmap(->(x) { ->(y) { x + y } }).app(Pattern.reify(other))
+    end
+
+    sig { params(other: T.untyped).returns(Pattern) }
+    def ladd(other)
+      # fmap(->(x) { ->(y) { x + y } }) << reify(other)
+      self.+(other)
+    end
+
+    sig { params(other: T.untyped).returns(Pattern) }
+    def radd(other)
+      # fmap(->(x) { ->(y) { x + y } }) >> (reify(other))
+      self.+(other)
+    end
+
+    sig { params(other: Numeric).returns(Pattern) }
+    def -(other)
+      fmap(->(x) { ->(y) { x - y } }).app(Pattern.reify(other))
     end
 
     private
@@ -416,16 +520,17 @@ module Cyclone
   # represented by two Rationals (`start` and `stop`)
   class TimeSpan
     extend T::Sig
+    Time = T.type_alias { T.any(Integer, Float, Rational) }
     TimeLambda = T.type_alias { T.proc.params(rat: Rational).returns(Rational) }
     SpanLambda = T.type_alias { T.proc.params(span: TimeSpan).returns(TimeSpan) }
 
     sig { returns(Rational) }
     attr_accessor :start, :stop
 
-    sig { params(start: Rational, stop: Rational).void }
+    sig { params(start: Time, stop: Time).void }
     def initialize(start, stop)
-      @start = start
-      @stop = stop
+      @start = start.to_r
+      @stop = stop.to_r
     end
 
     # Splits a timespan at cycle boundaries
@@ -445,7 +550,7 @@ module Cyclone
     # Applies given function to both the begin and end time value of the timespan
     sig { params(fun: TimeLambda).returns(TimeSpan) }
     def with_time(fun)
-      TimeSpan.new(fun.call(start).to_r, fun.call(stop).to_r)
+      TimeSpan.new(fun.call(start), fun.call(stop))
     end
 
     # Intersection of two TimeSpans
@@ -459,6 +564,28 @@ module Cyclone
     def maybe_intersect(other)
       intersection = intersect(other)
       intersection.stop > intersection.start ? intersection : nil
+    end
+
+    sig { params(other: T.untyped).returns(TimeSpan) }
+    def +(other)
+      if other.instance_of?(Integer) || other.instance_of?(Float) || other.instance_of?(Rational)
+        TimeSpan.new(start + other, stop + other)
+      elsif other.instance_of?(TimeSpan)
+        TimeSpan.new(start + other.start, stop + other.stop)
+      else
+        raise ArgumentError, "Cannot add #{other.class} to TimeSpan"
+      end
+    end
+
+    sig { params(other: T.untyped).returns(TimeSpan) }
+    def -(other)
+      if other.instance_of?(Integer) || other.instance_of?(Float) || other.instance_of?(Rational)
+        TimeSpan.new(start - other, stop - other)
+      elsif other.instance_of?(TimeSpan)
+        TimeSpan.new(start - other.start, stop - other.stop)
+      else
+        raise ArgumentError, "Cannot add #{other.class} to TimeSpan"
+      end
     end
 
     sig { returns(String) }

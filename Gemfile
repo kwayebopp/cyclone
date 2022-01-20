@@ -13,3 +13,5 @@ gem "sorbet", group: :development
 gem "sorbet-runtime"
 
 gem "pry", group: :development
+
+gem "superators19"
