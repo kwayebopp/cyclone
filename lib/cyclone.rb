@@ -256,6 +256,8 @@ module Cyclone
     :pr,
     :polymeter,
     :pm,
-    :signal
+    :signal,
+    :smoke_test,
+    :pattern_pretty_printing
   )
 end

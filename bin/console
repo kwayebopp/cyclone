@@ -12,4 +12,11 @@ require "cyclone"
 # Pry.start
 
 require "irb"
+require "irb/completion"
+
+require_relative "../lib/cyclone/pattern"
+require_relative "../lib/cyclone/event"
+require_relative "../lib/cyclone/time_span"
+require_relative "../lib/rational"
+
 IRB.start(__FILE__)
