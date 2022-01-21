@@ -81,11 +81,42 @@ module Cyclone
     )
 
     # Add number patterns together
-    print("\n== ADDITION ==\n")
+    puts("\n== ADDITION ==\n")
     numbers = fastcat([2, 3, 4, 5].map { |v| atom(v) })
     more_numbers = fastcat([atom(10), atom(100)])
     pattern_pretty_printing(
       pattern: numbers + more_numbers,
+      query_span: TimeSpan.new(0, 1)
+    )
+
+    puts("\n== EMBEDDED SEQUENCES ==\n")
+    # sequence([0,1,[2, [3, 4]]]) is the same as "[0 1 [2 [3 4]]]" in Tidal's mininotation
+    pattern_pretty_printing(
+      pattern: sequence([0, 1, [2, [3, [4]]]]),
+      query_span: TimeSpan.new(0, 1)
+    )
+
+    puts("\n== POLYRHYTHM  ==\n")
+    pattern_pretty_printing(
+      pattern: polyrhythm([[0, 1, 2, 3], [20, 30]]),
+      query_span: TimeSpan.new(0, 1)
+    )
+
+    puts("\n== POLYRHYTHM (fewer steps) ==\n")
+    pattern_pretty_printing(
+      pattern: polyrhythm([[0, 1, 2, 3], [20, 30]], steps: 2),
+      query_span: TimeSpan.new(0, 1)
+    )
+
+    puts("\n== POLYMETER ==\n")
+    pattern_pretty_printing(
+      pattern: polymeter([[0, 1, 2, 3], [20, 30]]),
+      query_span: TimeSpan.new(0, 1)
+    )
+
+    print("\n== POLYMETER (w/ embedded polyrhythm) ==\n")
+    pattern_pretty_printing(
+      pattern: pm([pr([[100, 200, 300, 400], [0, 1]]), [20, 30]]),
       query_span: TimeSpan.new(0, 1)
     )
   end
@@ -96,29 +127,17 @@ module Cyclone
     ->(value) { value }
   end
 
-  # Fundamental patterns
+  ########### Fundamental patterns
 
   sig { returns(Pattern) }
   def silence
     Pattern.new(->(_span) { [] })
   end
 
+  # A continuous value
   sig { params(value: T.untyped).returns(Pattern) }
   def steady(value)
     signal ->(_t) { value }
-  end
-
-  sig { params(fun: T.proc.params(time: Rational).returns(T.untyped)).returns(Pattern) }
-  def signal(fun)
-    query = lambda do |span|
-      [Event.new(
-        nil,
-        span,
-        fun.call(span.start + (span.stop - span.start) / 2)
-      )]
-    end
-
-    Pattern.new(query)
   end
 
   # Repeat discrete value once per cycle
@@ -134,7 +153,51 @@ module Cyclone
   end
   alias_method :atom, :pure
 
-  module_function :atom, :pure, :id
+  sig { params(thing: T.untyped).returns(Pattern) }
+  def sequence(thing)
+    _sequence(thing).first
+  end
+
+  sig { params(things: T.untyped, steps: T.nilable(Integer)).returns(Pattern) }
+  def polyrhythm(things, steps: nil)
+    sequences = things.map { |thing| _sequence(thing) }
+    return silence if sequences.empty?
+
+    steps = sequences[0][1] if steps.nil?
+    patterns = []
+    sequences.each do |(pattern, sequence_length)|
+      next if sequence_length.zero?
+
+      patterns << pattern if steps == sequence_length
+      patterns << pattern._fast(steps.to_r / sequence_length.to_r)
+    end
+
+    stack patterns
+  end
+  alias_method :pr, :polyrhythm
+
+  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
+  def polymeter(things)
+    sequences = things.map { |thing| sequence(thing) }
+    return silence if sequences.empty?
+
+    stack sequences
+  end
+  alias_method :pm, :polymeter
+
+  ########### Signals
+
+  #  A continuous pattern as a function from time to values. Takes the
+  #  midpoint of the given query as the time value.
+  sig { params(time_fun: T.proc.params(time: Rational).returns(T.untyped)).returns(Pattern) }
+  def signal(time_fun)
+    query = lambda do |span|
+      midpoint = span.start + (span.stop - span.start) / 2
+      [Event.new(nil, span, time_fun.call(midpoint.to_r))]
+    end
+
+    Pattern.new(query)
+  end
 
   # Concatenation: combines a list of patterns, switching between them
   # successively, one per cycle.
@@ -165,6 +228,22 @@ module Cyclone
     end
 
     Pattern.new(query)
+  end
+
+  module_function :atom, :pure, :id
+
+  private
+
+  sig { params(thing: T.untyped).returns([Pattern, Integer]) }
+  def _sequence(thing)
+    case thing.class
+    when Array
+      [fastcat(thing.map { |x| sequence(x) }), thing.size]
+    when Pattern
+      [thing, 1]
+    else
+      [atom(thing), 1]
+    end
   end
 
   # Event class, representing a value active during the timespan
@@ -211,9 +290,10 @@ module Cyclone
     end
 
     sig { returns(String) }
-    def to_s
-      "Event(#{whole}, #{part}, #{value})"
+    def inspect
+      "Event(#{whole}, #{part}, #{value.inspect})"
     end
+    alias_method :to_s, :inspect
   end
 
   # `Pattern` class, representing discrete and continuous `Event`s as a
@@ -448,6 +528,10 @@ module Cyclone
       fmap(->(x) { ->(y) { x - y } }).app(Pattern.reify(other))
     end
 
+    def inspect
+      query.call(TimeSpan.new(0, 1)).inspect
+    end
+
     private
 
     # Assumes self is a pattern of functions, and given a function to
@@ -592,8 +676,9 @@ module Cyclone
     end
 
     sig { returns(String) }
-    def to_s
+    def inspect
       "TimeSpan(#{start}, #{stop})"
     end
+    alias_method :to_s, :inspect
   end
 end
