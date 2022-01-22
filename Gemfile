@@ -15,3 +15,5 @@ gem "sorbet-runtime"
 gem "pry", group: :development
 
 gem "superators19"
+
+gem "pycall"

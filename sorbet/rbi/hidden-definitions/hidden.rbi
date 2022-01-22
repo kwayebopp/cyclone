@@ -3056,6 +3056,14 @@ class Fiber
   def initialize(*arg); end
 end
 
+module Fiddle
+  NULL = ::T.let(nil, ::T.untyped)
+  RTLD_GLOBAL = ::T.let(nil, ::T.untyped)
+  RTLD_LAZY = ::T.let(nil, ::T.untyped)
+  RTLD_NOW = ::T.let(nil, ::T.untyped)
+  WINDOWS = ::T.let(nil, ::T.untyped)
+end
+
 class File
   def self.absolute_path?(arg); end
 
@@ -4185,6 +4193,31 @@ end
 
 class Pry::Slop::Option
   DEFAULT_OPTIONS = ::T.let(nil, ::T.untyped)
+end
+
+module PyCall
+  VERSION = ::T.let(nil, ::T.untyped)
+end
+
+module PyCall::LibPython::Finder
+  LIBPREFIX = ::T.let(nil, ::T.untyped)
+  LIBSUFFIX = ::T.let(nil, ::T.untyped)
+end
+
+module PyCall::PyObjectWrapper
+  OPERATOR_METHOD_NAMES = ::T.let(nil, ::T.untyped)
+end
+
+module PyCall::Version
+  MAJOR = ::T.let(nil, ::T.untyped)
+  MICRO = ::T.let(nil, ::T.untyped)
+  MINOR = ::T.let(nil, ::T.untyped)
+  STRING = ::T.let(nil, ::T.untyped)
+  TAG = ::T.let(nil, ::T.untyped)
+end
+
+class PyCall::WrapperObjectCache
+  WMAP_SUPPORT_INT_KEY = ::T.let(nil, ::T.untyped)
 end
 
 module Rake

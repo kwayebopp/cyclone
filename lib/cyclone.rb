@@ -239,7 +239,7 @@ module Cyclone
   def controls
     [
       [S, "S", ["sound", "vowel"]],
-      [F, "F", ["n", "note", "rate", "gain", "pan"]]
+      [F, "F", ["n", "note", "rate", "gain", "pan", "speed", "room", "size"]]
     ]
   end
 
@@ -252,7 +252,7 @@ module Cyclone
   def setter(klass, name)
     fun = %{
       def self.#{name}(pattern)
-        pattern.fmap(->(value) { {"#{name}" => value}.transform_keys(&:to_sym) })
+        pattern.fmap(->(value) { {"#{name}" => value} })
       end
     }
 

@@ -1870,10 +1870,6 @@
 # uninitialized constant Fcntl
 # uninitialized constant Fcntl
 # wrong constant name initialize
-# uninitialized constant Fiddle
-# Did you mean?  File
-# uninitialized constant Fiddle
-# Did you mean?  File
 # wrong constant name absolute_path?
 # wrong constant name exists?
 # uninitialized constant FileUtils::DryRun::LN_SUPPORTED
