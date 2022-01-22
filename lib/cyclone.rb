@@ -7,6 +7,7 @@ require_relative "cyclone/version"
 
 module Cyclone
   extend T::Sig
+  extend self
 
   include Kernel
 
@@ -23,10 +24,11 @@ module Cyclone
 
   sig { returns(T.untyped) }
   def smoke_test
-    a = atom("hello")
-    b = atom("world")
-    c = fastcat([a, b])
-    d = stack([a, b])
+    # simple patterns
+    a = S.atom("hello")
+    b = S.atom("world")
+    c = S.fastcat([a, b])
+    d = S.stack([a, b])
 
     #  Printing the pattern
     puts "\n== TEST PATTERN ==\n"
@@ -52,7 +54,7 @@ module Cyclone
     pattern_pretty_printing(
       # recall that fast (no underscore) takes a `pattern_of_factors` as an argument
       # and returns a pattern
-      pattern: c.fast(fastcat([atom(2), atom(4)])),
+      pattern: c.fast(S.fastcat([F.pure(2), F.pure(4)])),
       query_span: TimeSpan.new(0, 1)
     )
 
@@ -72,8 +74,8 @@ module Cyclone
 
     # Apply pattern of values to a pattern of functions
     puts("\n== APPLICATIVE ==\n")
-    x = fastcat([atom(->(v) { v + 1 }), atom(->(v) { v + 2 })])
-    y = fastcat([atom(3), atom(4), atom(5)])
+    x = F.fastcat([Pattern.pure(->(v) { v + 1 }), Pattern.pure(->(v) { v + 2 })])
+    y = F.fastcat([F.pure(3), F.pure(4), F.pure(5)])
     z = x.app(y)
     pattern_pretty_printing(
       pattern: z,
@@ -82,8 +84,8 @@ module Cyclone
 
     # Add number patterns together
     puts("\n== ADDITION ==\n")
-    numbers = fastcat([2, 3, 4, 5].map { |v| atom(v) })
-    more_numbers = fastcat([atom(10), atom(100)])
+    numbers = F.fastcat([2, 3, 4, 5].map { |v| F.pure(v) })
+    more_numbers = F.fastcat([F.pure(10), F.pure(100)])
     pattern_pretty_printing(
       pattern: numbers + more_numbers,
       query_span: TimeSpan.new(0, 1)
@@ -92,33 +94,53 @@ module Cyclone
     puts("\n== EMBEDDED SEQUENCES ==\n")
     # sequence([0,1,[2, [3, 4]]]) is the same as "[0 1 [2 [3 4]]]" in Tidal's mininotation
     pattern_pretty_printing(
-      pattern: sequence([0, 1, [2, [3, [4]]]]),
+      pattern: I.sequence([0, 1, [2, [3, [4]]]]),
       query_span: TimeSpan.new(0, 1)
     )
 
     puts("\n== POLYRHYTHM  ==\n")
     pattern_pretty_printing(
-      pattern: polyrhythm([[0, 1, 2, 3], [20, 30]]),
+      pattern: I.polyrhythm([[0, 1, 2, 3], [20, 30]]),
       query_span: TimeSpan.new(0, 1)
     )
 
     puts("\n== POLYRHYTHM (fewer steps) ==\n")
     pattern_pretty_printing(
-      pattern: polyrhythm([[0, 1, 2, 3], [20, 30]], steps: 2),
+      pattern: I.polyrhythm([[0, 1, 2, 3], [20, 30]], steps: 2),
       query_span: TimeSpan.new(0, 1)
     )
 
     puts("\n== POLYMETER ==\n")
     pattern_pretty_printing(
-      pattern: polymeter([[0, 1, 2, 3], [20, 30]]),
+      pattern: I.polymeter([[0, 1, 2, 3], [20, 30]]),
       query_span: TimeSpan.new(0, 1)
     )
 
     print("\n== POLYMETER (w/ embedded polyrhythm) ==\n")
     pattern_pretty_printing(
-      pattern: pm([pr([[100, 200, 300, 400], [0, 1]]), [20, 30]]),
+      pattern: I.pm([I.pr([[100, 200, 300, 400], [0, 1]]), [20, 30]]),
       query_span: TimeSpan.new(0, 1)
     )
+  end
+
+  sig do
+    params(value: T.untyped).returns(
+      T.any(
+        T.class_of(Pattern),
+        T.class_of(F),
+        T.class_of(I),
+        T.class_of(R),
+        T.class_of(S)
+      )
+    )
+  end
+  def guess_value_class(value)
+    return S if S.check_type(value)
+    return F if F.check_type(value)
+    return I if I.check_type(value)
+    return R if R.check_type(value)
+
+    Pattern
   end
 
   # Identity function
@@ -128,11 +150,16 @@ module Cyclone
   end
 
   ########### Fundamental patterns
-
   sig { returns(Pattern) }
   def silence
-    Pattern.new(->(_span) { [] })
+    Pattern.silence
   end
+
+  sig { params(value: T.untyped).returns(Pattern) }
+  def pure(value)
+    guess_value_class(value).pure(value)
+  end
+  alias_method :atom, :pure
 
   # A continuous value
   sig { params(value: T.untyped).returns(Pattern) }
@@ -140,62 +167,98 @@ module Cyclone
     signal ->(_t) { value }
   end
 
-  # Repeat discrete value once per cycle
-  sig { params(value: T.untyped).returns(Pattern) }
-  def pure(value)
-    query = lambda do |span|
-      span.span_cycles.map do |s|
-        Event.new(s.start.whole_cycle, s, value)
-      end
-    end
+  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  def slowcat(patterns)
+    return Pattern.silence if patterns.empty?
 
-    Pattern.new(query)
-  end
-  alias_method :atom, :pure
-
-  sig { params(thing: T.untyped).returns(Pattern) }
-  def sequence(thing)
-    _sequence(thing).first
+    T.cast(patterns.first, Pattern).class.slowcat(patterns)
   end
 
-  sig { params(thing: T.untyped).returns([Pattern, Integer]) }
-  def _sequence(thing)
-    case thing.class
-    when Array
-      [fastcat(thing.map { |x| sequence(x) }), thing.size]
-    when Pattern
-      [thing, 1]
-    else
-      [atom(thing), 1]
-    end
+  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  def fastcat(patterns)
+    return Pattern.silence if patterns.empty?
+
+    T.cast(patterns.first, Pattern).class.fastcat(patterns)
+  end
+  alias_method :cat, :fastcat
+
+  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  def stack(patterns)
+    return Pattern.silence if patterns.empty?
+
+    T.cast(patterns.first, Pattern).class.stack(patterns)
   end
 
-  sig { params(things: T.untyped, steps: T.nilable(Integer)).returns(Pattern) }
+  sig { params(things: Array).returns(T.any(Pattern, [Pattern, Integer])) }
+  def _sequence(things)
+    return Pattern.silence if things.empty?
+
+    things.first.class._sequence(things)
+  end
+
+  sig { params(things: Array).returns(Pattern) }
+  def sequence(things)
+    return Pattern.silence if things.empty?
+
+    things.first.class.sequence(things)
+  end
+
+  sig { params(things: Array, steps: T.nilable(Integer)).returns(Pattern) }
   def polyrhythm(things, steps: nil)
-    sequences = things.map { |thing| _sequence(thing) }
-    return silence if sequences.empty?
+    return Pattern.silence if things.empty?
 
-    steps = sequences[0][1] if steps.nil?
-    patterns = []
-    sequences.each do |(pattern, sequence_length)|
-      next if sequence_length.zero?
+    klass =
+      if things.first.instance_of(Pattern)
+        T.cast(things.first, Pattern).class
+      else
+        guess_value_class(things.first)
+      end
 
-      patterns << pattern if steps == sequence_length
-      patterns << pattern._fast(steps.to_r / sequence_length.to_r)
-    end
-
-    stack patterns
+    klass.polyrhythm(things, steps: steps)
   end
   alias_method :pr, :polyrhythm
 
-  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
+  sig { params(things: Array).returns(Pattern) }
   def polymeter(things)
-    sequences = things.map { |thing| sequence(thing) }
-    return silence if sequences.empty?
+    return Pattern.silence if things.empty?
 
-    stack sequences
+    klass =
+      if things.first.instance_of(Pattern)
+        T.cast(things.first, Pattern).class
+      else
+        guess_value_class(things.first)
+      end
+
+    klass.polymeter(things)
   end
   alias_method :pm, :polymeter
+
+  ########### Controls
+
+  def self.controls
+    [
+      [S, "S", ["sound", "vowel"]],
+      [F, "F", ["n", "note", "rate", "gain", "pan"]]
+    ]
+  end
+
+  def self.setter(klass, name)
+    fun = %{
+      def self.#{name}(pattern)
+       pattern.fmap(->(value) { {"#{name}" => value}.transform_keys(&:to_sym) })
+      end
+    }
+
+    klass.module_eval(fun)
+  end
+
+  class_eval do
+    controls.each do |(klass, _klass_name, names)|
+      names.each do |name|
+        setter(klass, name)
+      end
+    end
+  end
 
   ########### Signals
 
@@ -210,54 +273,4 @@ module Cyclone
 
     Pattern.new(query)
   end
-
-  # Concatenation: combines a list of patterns, switching between them
-  # successively, one per cycle.
-  # (currently behaves slightly differently from Tidal)
-  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
-  def slowcat(patterns)
-    query = lambda do |span|
-      pattern = patterns[span.start.floor % patterns.size]
-      T.must(pattern).query.call(span)
-    end
-    pattern = Pattern.new(query)
-    pattern.split_queries
-  end
-
-  # Concatenation: as with slowcat, but squashes a cycle from each
-  # pattern into one cycle
-  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
-  def fastcat(patterns)
-    slowcat(patterns)._fast(patterns.size)
-  end
-  alias_method :cat, :fastcat
-
-  # Pile up patterns
-  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
-  def stack(patterns)
-    query = lambda do |span|
-      patterns.flat_map { |pattern| pattern.query.call(span) }
-    end
-
-    Pattern.new(query)
-  end
-
-  module_function(
-    :atom,
-    :pure,
-    :id,
-    :silence,
-    :slowcat,
-    :fastcat,
-    :stack,
-    :_sequence,
-    :sequence,
-    :polyrhythm,
-    :pr,
-    :polymeter,
-    :pm,
-    :signal,
-    :smoke_test,
-    :pattern_pretty_printing
-  )
 end

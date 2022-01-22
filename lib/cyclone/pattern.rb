@@ -129,11 +129,119 @@ module Cyclone
       query.call(TimeSpan.new(0, 1))
     end
 
+    sig { returns(Pattern) }
+    def self.silence
+      new(->(_) { [] })
+    end
+
+    sig { params(_value: T.untyped).returns(T::Boolean) }
+    def self.check_type(_value)
+      true
+    end
+
+    # Returns a pattern that repeats the given value once per cycle
+    sig { params(value: T.untyped).returns(Pattern) }
+    def self.pure(value)
+      raise ArgumentError unless check_type(value)
+
+      query = lambda do |span|
+        span.span_cycles.map do |s|
+          Event.new(s.start.whole_cycle, s, value)
+        end
+      end
+
+      new(query)
+    end
+    class << self
+      alias_method :atom, :pure
+    end
+
+    # Concatenation: combines a list of patterns, switching between them
+    # successively, one per cycle.
+    # (currently behaves slightly differently from Tidal)
+    sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+    def self.slowcat(patterns)
+      query = lambda do |span|
+        pattern = patterns[span.start.floor % patterns.size]
+        T.must(pattern).query.call(span)
+      end
+
+      new(query).split_queries
+    end
+
+    # Concatenation: as with slowcat, but squashes a cycle from each
+    # pattern into one cycle
+    sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+    def self.fastcat(patterns)
+      slowcat(patterns)._fast(patterns.size)
+    end
+    class << self
+      alias_method :cat, :slowcat
+    end
+
+    # Pile up patterns
+    sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+    def self.stack(patterns)
+      query = lambda do |span|
+        patterns.flat_map { |pattern| pattern.query.call(span) }
+      end
+
+      new(query)
+    end
+
+    sig { params(thing: T.any(Array, Pattern, T.untyped)).returns(Pattern) }
+    def self.sequence(thing)
+      _sequence(thing).first
+    end
+
+    sig { params(thing: T.any(Array, Pattern, T.untyped)).returns([Pattern, Integer]) }
+    def self._sequence(thing)
+      case thing
+      when Array
+        [fastcat(thing.map { |x| sequence(x) }), thing.size]
+      when Pattern
+        [thing, 1]
+      else
+        [atom(thing), 1]
+      end
+    end
+
+    sig { params(things: Array, steps: T.nilable(Integer)).returns(Pattern) }
+    def self.polyrhythm(things, steps: nil)
+      sequences = things.map { |thing| _sequence(thing) }
+      return silence if sequences.empty?
+
+      steps = T.cast(sequences[0], [Pattern, Integer])[1] if steps.nil?
+      patterns = []
+      sequences.each do |(pattern, sequence_length)|
+        next if sequence_length.zero?
+
+        patterns << pattern if steps == sequence_length
+        patterns << pattern._fast(steps.to_r / sequence_length.to_r)
+      end
+
+      stack patterns
+    end
+    class << self
+      alias_method :pr, :polyrhythm
+    end
+
+    sig { params(things: Array).returns(Pattern) }
+    def self.polymeter(things)
+      sequences = things.map { |thing| sequence(thing) }
+      return silence if sequences.empty?
+
+      stack sequences
+    end
+    class << self
+      alias_method :pm, :polymeter
+    end
+
     sig { params(thing: T.untyped).returns(Pattern) }
     def self.reify(thing)
-      return thing if thing.instance_of?(Pattern)
+      return thing if thing.instance_of?(self)
 
-      Cyclone.pure(thing)
+      pure(thing)
     end
 
     # Tidal's `<*>` operator
@@ -333,6 +441,49 @@ module Cyclone
       end
 
       self.class.new(query)
+    end
+  end
+
+  ########### Pattern Casses
+
+  class StringPattern < Pattern
+    extend T::Sig
+
+    sig { params(value: T.untyped).returns(T::Boolean) }
+    def self.check_type(value)
+      value.instance_of?(String)
+    end
+  end
+
+  S = StringPattern
+  class FloatPattern < Pattern
+    extend T::Sig
+
+    sig { params(value: T.untyped).returns(T::Boolean) }
+    def self.check_type(value)
+      value.instance_of?(Float) || value.instance_of?(Integer)
+    end
+  end
+
+  F = FloatPattern
+
+  class IntegerPattern < Pattern
+    extend T::Sig
+
+    sig { params(value: T.untyped).returns(T::Boolean) }
+    def self.check_type(value)
+      value.instance_of?(Integer)
+    end
+  end
+
+  I = IntegerPattern
+
+  class R < Pattern
+    extend T::Sig
+
+    sig { params(value: T.untyped).returns(T::Boolean) }
+    def self.check_type(value)
+      value.instance_of?(Rational)
     end
   end
 end
