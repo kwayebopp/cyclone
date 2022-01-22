@@ -235,29 +235,28 @@ module Cyclone
 
   ########### Controls
 
-  def self.controls
+  sig { returns(T::Array[[Class, String, T::Array[String]]]) }
+  def controls
     [
       [S, "S", ["sound", "vowel"]],
       [F, "F", ["n", "note", "rate", "gain", "pan"]]
     ]
   end
 
-  def self.setter(klass, name)
+  sig do
+    params(
+      klass: T.any(T.class_of(S), T.class_of(F)),
+      name: String
+    ).returns(Symbol)
+  end
+  def setter(klass, name)
     fun = %{
       def self.#{name}(pattern)
-       pattern.fmap(->(value) { {"#{name}" => value}.transform_keys(&:to_sym) })
+        pattern.fmap(->(value) { {"#{name}" => value}.transform_keys(&:to_sym) })
       end
     }
 
     klass.module_eval(fun)
-  end
-
-  class_eval do
-    controls.each do |(klass, _klass_name, names)|
-      names.each do |name|
-        setter(klass, name)
-      end
-    end
   end
 
   ########### Signals
@@ -272,5 +271,13 @@ module Cyclone
     end
 
     Pattern.new(query)
+  end
+
+  class_eval do
+    controls.each do |(klass, _klass_name, names)|
+      names.each do |name|
+        setter(klass, name)
+      end
+    end
   end
 end
