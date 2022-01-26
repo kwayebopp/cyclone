@@ -156,6 +156,59 @@ module Cyclone
       alias_method :atom, :pure
     end
 
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.sound(pattern)
+      pattern.fmap(->(value) { {"sound" => value} })
+    end
+    class << self
+      alias_method :s, :sound
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.vowel(pattern)
+      pattern.fmap(->(value) { {"vowel" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.n(pattern)
+      pattern.fmap(->(value) { {"n" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.note(pattern)
+      pattern.fmap(->(value) { {"note" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.rate(pattern)
+      pattern.fmap(->(value) { {"rate" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.gain(pattern)
+      pattern.fmap(->(value) { {"gain" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.pan(pattern)
+      pattern.fmap(->(value) { {"pan" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.speed(pattern)
+      pattern.fmap(->(value) { {"speed" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.room(pattern)
+      pattern.fmap(->(value) { {"room" => value} })
+    end
+
+    sig { params(pattern: Pattern).returns(Pattern) }
+    def self.size(pattern)
+      pattern.fmap(->(value) { {"size" => value} })
+    end
+
     # Concatenation: combines a list of patterns, switching between them
     # successively, one per cycle.
     # (currently behaves slightly differently from Tidal)
@@ -444,10 +497,21 @@ module Cyclone
     end
   end
 
-  ########### Pattern Casses
+  ########### Pattern Classes
 
   class StringPattern < Pattern
     extend T::Sig
+
+    class << self
+      undef_method(:n)
+      undef_method(:note)
+      undef_method(:rate)
+      undef_method(:gain)
+      undef_method(:pan)
+      undef_method(:speed)
+      undef_method(:room)
+      undef_method(:size)
+    end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
@@ -458,6 +522,12 @@ module Cyclone
   S = StringPattern
   class FloatPattern < Pattern
     extend T::Sig
+
+    class << self
+      undef_method(:s)
+      undef_method(:sound)
+      undef_method(:vowel)
+    end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
@@ -470,6 +540,12 @@ module Cyclone
   class IntegerPattern < Pattern
     extend T::Sig
 
+    class << self
+      undef_method(:s)
+      undef_method(:sound)
+      undef_method(:vowel)
+    end
+
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
       value.instance_of?(Integer)
@@ -480,6 +556,12 @@ module Cyclone
 
   class R < Pattern
     extend T::Sig
+
+    class << self
+      undef_method(:s)
+      undef_method(:sound)
+      undef_method(:vowel)
+end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)

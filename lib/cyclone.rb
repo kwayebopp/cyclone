@@ -238,25 +238,60 @@ module Cyclone
   sig { returns(T::Array[[Class, String, T::Array[String]]]) }
   def controls
     [
-      [S, "S", ["sound", "vowel"]],
+      [S, "S", ["s", "sound", "vowel"]],
       [F, "F", ["n", "note", "rate", "gain", "pan", "speed", "room", "size"]]
     ]
   end
 
-  sig do
-    params(
-      klass: T.any(T.class_of(S), T.class_of(F)),
-      name: String
-    ).returns(Symbol)
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def sound(pattern)
+    Pattern.sound(pattern)
   end
-  def setter(klass, name)
-    fun = %{
-      def self.#{name}(pattern)
-        pattern.fmap(->(value) { {"#{name}" => value} })
-      end
-    }
+  alias_method :s, :sound
 
-    klass.module_eval(fun)
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def vowel(pattern)
+    Pattern.vowel(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def n(pattern)
+    Pattern.n(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def note(pattern)
+    Pattern.note(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def rate(pattern)
+    Pattern.rate(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def gain(pattern)
+    Pattern.gain(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def pan(pattern)
+    Pattern.pan(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def speed(pattern)
+    Pattern.speed(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def room(pattern)
+    Pattern.room(pattern)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def size(pattern)
+    Pattern.size(pattern)
   end
 
   ########### Signals
@@ -271,13 +306,5 @@ module Cyclone
     end
 
     Pattern.new(query)
-  end
-
-  class_eval do
-    controls.each do |(klass, _klass_name, names)|
-      names.each do |name|
-        setter(klass, name)
-      end
-    end
   end
 end
