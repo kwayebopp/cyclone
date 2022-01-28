@@ -11,15 +11,15 @@ require "cyclone"
 include Cyclone
 
 clock = LinkClock.new(120)
-clock.play
+clock.start
 
 stream = SuperDirtStream.new
 clock.subscribe(stream)
 
-puts("wait a sec")
-sleep(0.5)
+puts("> wait a sec")
+sleep(1)
 
-puts("set pattern")
+puts("> set pattern and play for 2 seconds")
 stream.pattern = (
    s(
      stack(
@@ -33,11 +33,19 @@ stream.pattern = (
    room(pure(0.5)) >>
    size(pure(0.8))
  )
-sleep(3)
-
-puts("unset pattern")
-stream.pattern = nil
 sleep(2)
 
+puts("> stop the clock for a bit")
 clock.stop
-puts("done")
+
+puts("> now wait 3 secs")
+sleep(3)
+
+puts("> start again...")
+clock.start
+
+sleep(2)
+
+puts("> stop the clock")
+clock.stop
+puts("> done")
