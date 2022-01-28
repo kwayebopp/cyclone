@@ -9,13 +9,17 @@
 #
 # cyclone-0.1.0
 
-class LinkClock
-  def bpm; end
-  def bpm=(arg0); end
-  def initialize(bpm = nil); end
+class SuperDirtStream
+  def initialize(port = 57120, latency = 0.2); end
+  def latency; end
+  def latency=(arg0); end
+  def notify_tick(cycle, session_state, cps, bpc, mill, now); end
+  def pattern; end
+  def pattern=(arg0); end
   def play; end
-  def play_thread_target; end
+  def playing?; end
   def stop; end
-  def subscribe(subscriber); end
-  def unsubscribe(subscriber); end
+  extend T::Private::Methods::MethodHooks
+  extend T::Private::Methods::SingletonMethodHooks
+  extend T::Sig
 end

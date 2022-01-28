@@ -3878,14 +3878,6 @@ class Integer
 end
 
 class JSON::Ext::Generator::State
-  def escape_slash(); end
-
-  def escape_slash=(escape_slash); end
-
-  def escape_slash?(); end
-end
-
-class JSON::Ext::Generator::State
   def self.from_state(arg); end
 end
 
@@ -3898,16 +3890,6 @@ JSON::Parser = JSON::Ext::Parser
 JSON::State = JSON::Ext::Generator::State
 
 JSON::UnparserError = JSON::GeneratorError
-
-module JSON
-  def self.create_fast_state(); end
-
-  def self.create_pretty_state(); end
-
-  def self.load_file(filespec, opts=T.unsafe(nil)); end
-
-  def self.load_file!(filespec, opts=T.unsafe(nil)); end
-end
 
 module Kernel
   def itself(); end
@@ -3927,6 +3909,11 @@ end
 
 class KeyError
   include ::DidYouMean::Correctable
+end
+
+class LinkClock
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 module MethodSource

@@ -2203,15 +2203,8 @@
 # uninitialized constant IRB
 # Did you mean?  ERB
 # wrong constant name to_bn
-# wrong constant name escape_slash
-# wrong constant name escape_slash=
-# wrong constant name escape_slash?
 # wrong constant name from_state
 # wrong constant name initialize
-# wrong constant name create_fast_state
-# wrong constant name create_pretty_state
-# wrong constant name load_file
-# wrong constant name load_file!
 # uninitialized constant Jacobian
 # uninitialized constant Jacobian
 # uninitialized constant Kconv
