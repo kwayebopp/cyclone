@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require "pry"
@@ -133,15 +133,17 @@ module Cyclone
         T.class_of(F),
         T.class_of(I),
         T.class_of(R),
-        T.class_of(S)
+        T.class_of(S),
+        T.class_of(Control)
       )
     )
   end
   def guess_value_class(value)
+    return I if I.check_type(value)
     return S if S.check_type(value)
     return F if F.check_type(value)
-    return I if I.check_type(value)
     return R if R.check_type(value)
+    return Control if Control.check_type(value)
 
     Pattern
   end
@@ -192,21 +194,21 @@ module Cyclone
     T.cast(patterns.first, Pattern).class.stack(patterns)
   end
 
-  sig { params(things: Array).returns(T.any(Pattern, [Pattern, Integer])) }
+  sig { params(things: T::Array[T.untyped]).returns(T.any(Pattern, [Pattern, Integer])) }
   def _sequence(things)
     return Pattern.silence if things.empty?
 
     things.first.class._sequence(things)
   end
 
-  sig { params(things: Array).returns(Pattern) }
+  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
   def sequence(things)
     return Pattern.silence if things.empty?
 
     things.first.class.sequence(things)
   end
 
-  sig { params(things: Array, steps: T.nilable(Integer)).returns(Pattern) }
+  sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
   def polyrhythm(things, steps: nil)
     return Pattern.silence if things.empty?
 
@@ -221,7 +223,7 @@ module Cyclone
   end
   alias_method :pr, :polyrhythm
 
-  sig { params(things: Array).returns(Pattern) }
+  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
   def polymeter(things)
     return Pattern.silence if things.empty?
 

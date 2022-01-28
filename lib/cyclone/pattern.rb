@@ -1,12 +1,12 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require "pry"
 require "sorbet-runtime"
 
+# `Pattern` class, representing discrete and continuous `Event`s as a
+# function of time.
 module Cyclone
-  # `Pattern` class, representing discrete and continuous `Event`s as a
-  # function of time.
   class Pattern
     extend T::Sig
     Query = T.type_alias { T.proc.params(span: TimeSpan).returns(T::Array[Event]) }
@@ -158,7 +158,7 @@ module Cyclone
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.sound(pattern)
-      pattern.fmap(->(value) { {"sound" => value} })
+      Control.new(pattern.fmap(->(value) { {"sound" => value} }).query)
     end
     class << self
       alias_method :s, :sound
@@ -166,47 +166,47 @@ module Cyclone
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.vowel(pattern)
-      pattern.fmap(->(value) { {"vowel" => value} })
+      Control.new(pattern.fmap(->(value) { {"vowel" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.n(pattern)
-      pattern.fmap(->(value) { {"n" => value} })
+      Control.new(pattern.fmap(->(value) { {"n" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.note(pattern)
-      pattern.fmap(->(value) { {"note" => value} })
+      Control.new(pattern.fmap(->(value) { {"note" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.rate(pattern)
-      pattern.fmap(->(value) { {"rate" => value} })
+      Control.new(pattern.fmap(->(value) { {"rate" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.gain(pattern)
-      pattern.fmap(->(value) { {"gain" => value} })
+      Control.new(pattern.fmap(->(value) { {"gain" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.pan(pattern)
-      pattern.fmap(->(value) { {"pan" => value} })
+      Control.new(pattern.fmap(->(value) { {"pan" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.speed(pattern)
-      pattern.fmap(->(value) { {"speed" => value} })
+      Control.new(pattern.fmap(->(value) { {"speed" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.room(pattern)
-      pattern.fmap(->(value) { {"room" => value} })
+      Control.new(pattern.fmap(->(value) { {"room" => value} }).query)
     end
 
     sig { params(pattern: Pattern).returns(Pattern) }
     def self.size(pattern)
-      pattern.fmap(->(value) { {"size" => value} })
+      Control.new(pattern.fmap(->(value) { {"size" => value} }).query)
     end
 
     # Concatenation: combines a list of patterns, switching between them
@@ -242,12 +242,12 @@ module Cyclone
       new(query)
     end
 
-    sig { params(thing: T.any(Array, Pattern, T.untyped)).returns(Pattern) }
+    sig { params(thing: T.any(T::Array[T.untyped], Pattern, T.untyped)).returns(Pattern) }
     def self.sequence(thing)
       _sequence(thing).first
     end
 
-    sig { params(thing: T.any(Array, Pattern, T.untyped)).returns([Pattern, Integer]) }
+    sig { params(thing: T.any(T::Array[T.untyped], Pattern, T.untyped)).returns([Pattern, Integer]) }
     def self._sequence(thing)
       case thing
       when Array
@@ -259,7 +259,7 @@ module Cyclone
       end
     end
 
-    sig { params(things: Array, steps: T.nilable(Integer)).returns(Pattern) }
+    sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
     def self.polyrhythm(things, steps: nil)
       sequences = things.map { |thing| _sequence(thing) }
       return silence if sequences.empty?
@@ -279,7 +279,7 @@ module Cyclone
       alias_method :pr, :polyrhythm
     end
 
-    sig { params(things: Array).returns(Pattern) }
+    sig { params(things: T::Array[T.untyped]).returns(Pattern) }
     def self.polymeter(things)
       sequences = things.map { |thing| sequence(thing) }
       return silence if sequences.empty?
@@ -418,13 +418,16 @@ module Cyclone
       fmap(->(x) { ->(y) { {**y, **x} } }).app(other)
     end
 
-    # The union of two patterns of dictionaries, with values from right
-    # replacing any with the same name from the left
+    # Overrides the >> operator to support combining patterns of
+    # dictionaries (AKA 'control patterns'). Produces the union of
+    # two patterns of dictionaries, with values from right replacing
+    # any with the same name from the left
     sig { params(other: Pattern).returns(Pattern) }
     def >>(other)
       fmap(->(x) { ->(y) { {**x, **y} } }).app(other)
     end
 
+    sig { returns(String) }
     def inspect
       query.call(TimeSpan.new(0, 1)).inspect
     end
@@ -561,11 +564,20 @@ module Cyclone
       undef_method(:s)
       undef_method(:sound)
       undef_method(:vowel)
-end
+    end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
       value.instance_of?(Rational)
+    end
+  end
+
+  class Control < Pattern
+    extend T::Sig
+
+    sig { params(value: T.untyped).returns(T::Boolean) }
+    def self.check_type(value)
+      value.instance_of?(Hash)
     end
   end
 end
