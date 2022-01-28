@@ -9,24 +9,13 @@
 #
 # cyclone-0.1.0
 
-module Cyclone
-  extend Cyclone
-  extend T::Sig
-  include Kernel
-end
-class Cyclone::Error < StandardError
-end
-class Cyclone::StringPattern < Cyclone::Pattern
-  def self.sound(pattern); end
-  def self.vowel(pattern); end
-end
-class Cyclone::FloatPattern < Cyclone::Pattern
-  def self.gain(pattern); end
-  def self.n(pattern); end
-  def self.note(pattern); end
-  def self.pan(pattern); end
-  def self.rate(pattern); end
-  def self.room(pattern); end
-  def self.size(pattern); end
-  def self.speed(pattern); end
+class LinkClock
+  def bpm; end
+  def bpm=(arg0); end
+  def initialize(bpm = nil); end
+  def play; end
+  def play_thread_target; end
+  def stop; end
+  def subscribe(subscriber); end
+  def unsubscribe(subscriber); end
 end

@@ -31,13 +31,3 @@ class Object < BasicObject
   def superator_queue; end
   def ~; end
 end
-module Cyclone
-  extend Cyclone
-  extend Cyclone
-  extend T::Sig
-  extend T::Sig
-  include Kernel
-  include Kernel
-end
-class Cyclone::Error < StandardError
-end

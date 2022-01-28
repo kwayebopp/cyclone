@@ -4,6 +4,9 @@
 require "pry"
 require "sorbet-runtime"
 require_relative "cyclone/version"
+require_relative "cyclone/pattern"
+require_relative "cyclone/event"
+require_relative "cyclone/time_span"
 
 module Cyclone
   extend T::Sig
