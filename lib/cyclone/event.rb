@@ -18,6 +18,7 @@ module Cyclone
 
     sig { returns(T.nilable(Cyclone::TimeSpan)) }
     attr_accessor :whole
+
     sig { returns(Cyclone::TimeSpan) }
     attr_accessor :part
 

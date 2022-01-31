@@ -93,6 +93,11 @@ module Cyclone
       self.class.new(query)
     end
 
+    sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern)).returns(Pattern) }
+    def every(count, fun)
+      slowcat([fun.call(self)] + ([self] * (count - 1)))
+    end
+
     # Speeds up a `Pattern` by the given `factor``
     sig { params(factor: Numeric).returns(Pattern) }
     def _fast(factor)
@@ -101,9 +106,11 @@ module Cyclone
     end
 
     # Speeds up a `Pattern` using the given `pattern_of_factors`.
-    sig { params(pattern_of_factors: Pattern).returns(Pattern) }
-    def fast(pattern_of_factors)
-      pattern_of_factors.fmap(->(factor) { _fast(factor) }).outer_join
+    sig { params(factor: T.any(Pattern, Numeric)).returns(Pattern) }
+    def fast(factor)
+      return _fast(T.cast(factor, Numeric)) unless factor.instance_of?(Pattern)
+
+      T.cast(factor, Pattern).fmap(->(fac) { _fast(fac) }).outer_join
     end
 
     # Slow slows down a `Pattern` by the given `factor`
@@ -343,7 +350,7 @@ module Cyclone
     # the intersection of matched inner and outer events.
     sig { returns(Pattern) }
     def join
-      bind(Cyclone.id)
+      bind(id)
     end
 
     sig do
@@ -362,7 +369,7 @@ module Cyclone
     # taken from inner events.
     sig { returns(Pattern) }
     def inner_join
-      inner_bind(Cyclone.id)
+      inner_bind(id)
     end
 
     sig do
@@ -381,7 +388,7 @@ module Cyclone
     #  taken from outer events.
     sig { returns(Pattern) }
     def outer_join
-      outer_bind(Cyclone.id)
+      outer_bind(id)
     end
 
     sig { params(other: T.untyped).returns(Pattern) }

@@ -1,8 +1,8 @@
 # typed: strict
 # frozen_string_literal: true
 
-require "pry"
-require "sorbet-runtime"
+require 'pry'
+require 'sorbet-runtime'
 
 # TimeSpan is simply an interval of time,
 # represented by two Rationals (`start` and `stop`)
@@ -84,6 +84,6 @@ module Cyclone
     def inspect
       "TimeSpan(#{start}, #{stop})"
     end
-    alias_method :to_s, :inspect
+    alias to_s inspect
   end
 end
