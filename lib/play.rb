@@ -31,7 +31,7 @@ stream.pattern = (
    ) >>
    speed([2, 3]) >>
    room(0.5) >>
-   size(0.8) >>
+   size(0.8)
  )
 sleep(2)
 
