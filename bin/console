@@ -18,5 +18,9 @@ require_relative "../lib/cyclone/pattern"
 require_relative "../lib/cyclone/event"
 require_relative "../lib/cyclone/time_span"
 require_relative "../lib/rational"
+require_relative "../lib/stream/super_dirt_stream"
+require_relative "../lib/stream/link_clock"
+
+include Cyclone
 
 IRB.start(__FILE__)

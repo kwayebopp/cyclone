@@ -9,20 +9,17 @@
 #
 # cyclone-0.1.0
 
-class SuperDirtStream
-  def address(*args, &blk); end
+class LinkClock
+  def bpm(*args, &blk); end
+  def bpm=(arg0); end
+  def create_notify_thread(*args, &blk); end
   def initialize(*args, &blk); end
-  def is_playing=(*args, &blk); end
-  def latency(*args, &blk); end
-  def latency=(arg0); end
-  def liblo(*args, &blk); end
-  def notify_tick(*args, &blk); end
-  def pattern(*args, &blk); end
-  def pattern=(arg0); end
-  def play(*args, &blk); end
-  def playing?(*args, &blk); end
-  def port(*args, &blk); end
+  def notify_thread_target(*args, &blk); end
+  def running?(*args, &blk); end
+  def start(*args, &blk); end
   def stop(*args, &blk); end
+  def subscribe(*args, &blk); end
+  def unsubscribe(*args, &blk); end
   extend T::Private::Methods::MethodHooks
   extend T::Private::Methods::SingletonMethodHooks
   extend T::Sig
