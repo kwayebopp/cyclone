@@ -1,14 +1,16 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require "sorbet-runtime"
 require "pycall"
+require_relative "../logging"
 
 # A class for sending control pattern messages to SuperDirt
 #
 # It should be subscribed to a LinkClock instance.
 class SuperDirtStream
   extend T::Sig
+  include Logging
 
   sig { returns(Float) }
   attr_accessor :latency
@@ -51,15 +53,15 @@ class SuperDirtStream
 
     cycle_from, cycle_to = cycle
     events = T.cast(pattern, Cyclone::Pattern).onsets_only.query.call(Cyclone::TimeSpan.new(cycle_from, cycle_to))
-    puts("\n#{events.map(&:value)}") unless events.empty?
+    logger.debug("\n#{events.map(&:value)}") unless events.empty?
 
     events.each do |event|
       event_whole = T.cast(event.whole, Cyclone::TimeSpan)
       cycle_on = event_whole.start
       cycle_off = event_whole.stop
 
-      puts([cycle_on, cycle_off, bpc].join(" "))
-      puts([cycle_on * bpc, cycle_off * bpc].join(" "))
+      logger.debug([cycle_on, cycle_off, bpc].join(" "))
+      logger.debug([cycle_on * bpc, cycle_off * bpc].join(" "))
 
       link_on = session_state.timeAtBeat((cycle_on * bpc).to_f, 0)
       link_off = session_state.timeAtBeat((cycle_off * bpc).to_f, 0)
@@ -80,7 +82,7 @@ class SuperDirtStream
         msg << v
       end
 
-      puts(msg.join(" "))
+      logger.debug(msg.join(" "))
       bundle = liblo.Bundle.new(ticks, liblo.Message.new("/dirt/play", *msg))
       PyCall.getattr(liblo, :send).call(address, bundle)
     end
@@ -92,10 +94,7 @@ class SuperDirtStream
   attr_reader :port
 
   sig { returns(T.untyped) }
-  attr_reader :address
-
-  sig { returns(T.untyped) }
-  attr_reader :liblo
+  attr_reader :address, :liblo
 
   sig { params(is_playing: T::Boolean).returns(T::Boolean) }
   attr_writer :is_playing

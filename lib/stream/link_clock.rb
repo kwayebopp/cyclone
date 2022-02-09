@@ -1,9 +1,10 @@
-# typed: strict
+# typed: ignore
 # frozen_string_literal: true
 
 require "pycall"
 require "sorbet-runtime"
-require "lib/stream/super_dirt_stream"
+require_relative "super_dirt_stream"
+require_relative "../logging"
 
 #  This class handles synchronization between different devices using the Link
 #  protocol.
@@ -12,6 +13,7 @@ require "lib/stream/super_dirt_stream"
 #  each clock tick. It expects that subscribers define a `notify_tick` method.
 class LinkClock
   extend T::Sig
+  include Logging
 
   sig { returns(T.any(Float, Integer)) }
   attr_accessor :bpm
@@ -32,6 +34,7 @@ class LinkClock
 
     @notify_thread = T.let(Thread.new {}, Thread)
   end
+
   # Subscribe an object to recieve tick notifications.
   sig { params(subscriber: SuperDirtStream).void }
   def subscribe(subscriber)
@@ -91,14 +94,14 @@ class LinkClock
 
   sig { void }
   def notify_thread_target
-    puts("Link enabled")
+    logger.info("Link enabled")
     @link.enabled = true
     @link.startStopSyncEnabled = true
 
     start = @link.clock.micros
     mill = 1_000_000
     start_beat = @link.captureSessionState.beatAtTime(start, 4)
-    puts("start: #{start_beat}")
+    logger.debug("start: #{start_beat}")
 
     ticks = 0
 
@@ -132,6 +135,6 @@ class LinkClock
     end
 
     @link.enabled = false
-    puts("Link disabled")
+    logger.info("Link disabled")
   end
 end
