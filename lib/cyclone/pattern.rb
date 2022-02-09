@@ -1,4 +1,4 @@
-# typed: strict
+# typed: false
 # frozen_string_literal: true
 
 require "pry"
@@ -7,6 +7,14 @@ require "sorbet-runtime"
 # `Pattern` class, representing discrete and continuous `Event`s as a
 # function of time.
 module Cyclone
+  extend T::Sig
+
+  # Identity function
+  sig { returns(T.proc.params(value: T.untyped).returns(T.untyped)) }
+  def id
+    ->(value) { value }
+  end
+
   class Pattern
     extend T::Sig
     Query = T.type_alias { T.proc.params(span: TimeSpan).returns(T::Array[Event]) }
@@ -95,7 +103,7 @@ module Cyclone
 
     sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern)).returns(Pattern) }
     def every(count, fun)
-      slowcat([fun.call(self)] + ([self] * (count - 1)))
+      Pattern.slowcat([fun.call(self)] + ([self] * (count - 1)))
     end
 
     # Speeds up a `Pattern` by the given `factor``
@@ -236,7 +244,7 @@ module Cyclone
       slowcat(patterns)._fast(patterns.size)
     end
     class << self
-      alias_method :cat, :slowcat
+      alias_method :cat, :fastcat
     end
 
     # Pile up patterns

@@ -10,15 +10,19 @@
 # cyclone-0.1.0
 
 class SuperDirtStream
-  def initialize(port = 57120, latency = 0.2); end
-  def latency; end
+  def address(*args, &blk); end
+  def initialize(*args, &blk); end
+  def is_playing=(*args, &blk); end
+  def latency(*args, &blk); end
   def latency=(arg0); end
-  def notify_tick(cycle, session_state, cps, bpc, mill, now); end
-  def pattern; end
+  def liblo(*args, &blk); end
+  def notify_tick(*args, &blk); end
+  def pattern(*args, &blk); end
   def pattern=(arg0); end
-  def play; end
-  def playing?; end
-  def stop; end
+  def play(*args, &blk); end
+  def playing?(*args, &blk); end
+  def port(*args, &blk); end
+  def stop(*args, &blk); end
   extend T::Private::Methods::MethodHooks
   extend T::Private::Methods::SingletonMethodHooks
   extend T::Sig

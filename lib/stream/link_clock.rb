@@ -3,6 +3,7 @@
 
 require "pycall"
 require "sorbet-runtime"
+require "lib/stream/super_dirt_stream"
 
 #  This class handles synchronization between different devices using the Link
 #  protocol.

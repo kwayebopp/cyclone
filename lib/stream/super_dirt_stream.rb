@@ -1,4 +1,4 @@
-# typed: ignore
+# typed: true
 # frozen_string_literal: true
 
 require "sorbet-runtime"
@@ -18,13 +18,13 @@ class SuperDirtStream
 
   sig { params(port: Integer, latency: Float).void }
   def initialize(port = 57120, latency = 0.2)
-    @port = T.let(port, Integer)
-    @latency = T.let(latency, Float)
-    @is_playing = T.let(true, T::Boolean)
-
     @liblo = T.let(PyCall.import_module("liblo"), T.untyped)
     @pattern = T.let(nil, T.nilable(Cyclone::Pattern))
     @address = T.let(@liblo.Address.new(port), T.untyped)
+
+    @port = T.let(port, Integer)
+    @latency = T.let(latency, Float)
+    @is_playing = T.let(true, T::Boolean)
   end
 
   # Play stream
@@ -45,7 +45,7 @@ class SuperDirtStream
     @is_playing
   end
 
-  sig {params(cycle: [Float, Float], session_state: T.untyped, cps: Float, bpc: Integer, mill: Integer, now: Integer).void}
+  sig { params(cycle: [Float, Float], session_state: T.untyped, cps: Float, bpc: Integer, mill: Integer, now: Integer).void }
   def notify_tick(cycle, session_state, cps, bpc, mill, now)
     return unless playing? && pattern
 

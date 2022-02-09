@@ -1,13 +1,17 @@
+# typed: strict
 # frozen_string_literal: true
 
-require 'pry'
-# require "sorbet-runtime"
-require_relative 'cyclone/version'
-require_relative 'cyclone/pattern'
-require_relative 'cyclone/event'
-require_relative 'cyclone/time_span'
+require "pry"
+require "sorbet-runtime"
+require_relative "cyclone/version"
+require_relative "cyclone/pattern"
+require_relative "cyclone/event"
+require_relative "cyclone/time_span"
 
-# extend T::Sig
+include Kernel
+
+extend T::Sig
+
 Pattern = Cyclone::Pattern
 TimeSpan = Cyclone::TimeSpan
 Event = Cyclone::Event
@@ -17,10 +21,8 @@ S = Cyclone::S
 F = Cyclone::F
 Control = Cyclone::Control
 
-include Kernel
-
 # Better formatting for printing Tidal Patterns
-# sig { params(pattern: Pattern, query_span: TimeSpan).void }
+sig { params(pattern: Pattern, query_span: TimeSpan).void }
 def pattern_pretty_printing(pattern:, query_span:)
   pattern.query.call(query_span).each do |event|
     puts event.to_s
@@ -28,11 +30,11 @@ def pattern_pretty_printing(pattern:, query_span:)
   nil
 end
 
-# sig { returns(T.untyped) }
+sig { returns(T.untyped) }
 def smoke_test
   # simple patterns
-  a = S.atom('hello')
-  b = S.atom('world')
+  a = S.atom("hello")
+  b = S.atom("world")
   c = S.fastcat([a, b])
   d = S.stack([a, b])
 
@@ -129,18 +131,18 @@ def smoke_test
   )
 end
 
-# sig do
-#   params(value: T.untyped).returns(
-#     T.any(
-#       T.class_of(Pattern),
-#       T.class_of(F),
-#       T.class_of(I),
-#       T.class_of(R),
-#       T.class_of(S),
-#       T.class_of(Control)
-#     )
-#   )
-# end
+sig do
+  params(value: T.untyped).returns(
+    T.any(
+      T.class_of(Pattern),
+      T.class_of(F),
+      T.class_of(I),
+      T.class_of(R),
+      T.class_of(S),
+      T.class_of(Control)
+    )
+  )
+end
 def guess_value_class(value)
   return I if I.check_type(value)
   return S if S.check_type(value)
@@ -151,67 +153,61 @@ def guess_value_class(value)
   Pattern
 end
 
-# Identity function
-# sig { returns(T.proc.params(value: T.untyped).returns(T.untyped)) }
-def id
-  ->(value) { value }
-end
-
 ########### Fundamental patterns
-# sig { returns(Pattern) }
+sig { returns(Pattern) }
 def silence
   Pattern.silence
 end
 
-# sig { params(value: T.untyped).returns(Pattern) }
+sig { params(value: T.untyped).returns(Pattern) }
 def pure(value)
   guess_value_class(value).pure(value)
 end
-alias atom pure
+alias_method :atom, :pure
 
 # A continuous value
-# sig { params(value: T.untyped).returns(Pattern) }
+sig { params(value: T.untyped).returns(Pattern) }
 def steady(value)
   signal ->(_t) { value }
 end
 
-# sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
 def slowcat(patterns)
   return Pattern.silence if patterns.empty?
 
   T.cast(patterns.first, Pattern).class.slowcat(patterns)
 end
 
-# sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
 def fastcat(patterns)
   return Pattern.silence if patterns.empty?
 
   T.cast(patterns.first, Pattern).class.fastcat(patterns)
 end
-alias cat fastcat
+alias_method :cat, :fastcat
 
-# sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
 def stack(patterns)
   return Pattern.silence if patterns.empty?
 
   T.cast(patterns.first, Pattern).class.stack(patterns)
 end
 
-# sig { params(things: T::Array[T.untyped]).returns(T.any(Pattern, [Pattern, Integer])) }
+sig { params(things: T::Array[T.untyped]).returns(T.any(Pattern, [Pattern, Integer])) }
 def _sequence(things)
   return Pattern.silence if things.empty?
 
   things.first.class._sequence(things)
 end
 
-# sig { params(things: T::Array[T.untyped]).returns(Pattern) }
+sig { params(things: T::Array[T.untyped]).returns(Pattern) }
 def sequence(things)
   return Pattern.silence if things.empty?
 
   things.first.class.sequence(things)
 end
 
-# sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
+sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
 def polyrhythm(things, steps: nil)
   return Pattern.silence if things.empty?
 
@@ -224,9 +220,9 @@ def polyrhythm(things, steps: nil)
 
   klass.polyrhythm(things, steps: steps)
 end
-alias pr polyrhythm
+alias_method :pr, :polyrhythm
 
-# sig { params(things: T::Array[T.untyped]).returns(Pattern) }
+sig { params(things: T::Array[T.untyped]).returns(Pattern) }
 def polymeter(things)
   return Pattern.silence if things.empty?
 
@@ -239,102 +235,111 @@ def polymeter(things)
 
   klass.polymeter(things)
 end
-alias pm polymeter
+alias_method :pm, :polymeter
 
 ########### Controls
 
-# sig { returns(T::Array[[Class, String, T::Array[String]]]) }
+sig { returns(T::Array[[Class, String, T::Array[String]]]) }
 def controls
   [
-    [S, 'S', %w[s sound vowel]],
-    [F, 'F', %w[n note rate gain pan speed room size]]
+    [S, "S", %w[s sound vowel]],
+    [F, "F", %w[n note rate gain pan speed room size]]
   ]
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def sound(pattern)
   Pattern.sound(pattern)
 end
-alias s sound
+alias_method :s, :sound
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def vowel(pattern)
   Pattern.vowel(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def n(pattern)
   Pattern.n(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def note(pattern)
   Pattern.note(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def rate(pattern)
   Pattern.rate(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def gain(pattern)
   Pattern.gain(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def pan(pattern)
   Pattern.pan(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def speed(pattern)
   Pattern.speed(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def room(pattern)
   Pattern.room(pattern)
 end
 
-# sig { params(pattern: Pattern).returns(Pattern) }
+sig { params(pattern: Pattern).returns(Pattern) }
 def size(pattern)
   Pattern.size(pattern)
 end
 
+sig { params(function_name: Symbol).returns(T.proc.returns(T.untyped)) }
 def currify(function_name)
   m = method(function_name)
   m.curry(m.arity)
 end
 
+sig { params(factor: T.any(Pattern, Numeric), pattern: Pattern).returns(Pattern) }
 def _fast(factor, pattern)
   pattern.fast(factor)
 end
 
+sig { returns(T.proc.returns(Pattern)) }
 def fast
   currify(:_fast)
 end
 
+sig { params(factor: Numeric, pattern: Pattern).returns(Pattern) }
 def _slow(factor, pattern)
   pattern.slow(factor)
 end
 
+sig { returns(T.proc.returns(Pattern)) }
 def slow
   currify(:_slow)
 end
 
+sig { params(offset: Numeric, pattern: Pattern).returns(Pattern) }
 def _early(offset, pattern)
   pattern.early(offset)
 end
 
+sig { returns(T.proc.returns(Pattern)) }
 def early
   currify(:_early)
 end
 
+sig { params(offset: Numeric, pattern: Pattern).returns(Pattern) }
 def _late(offset, pattern)
   pattern.late(offset)
 end
 
+sig { returns(T.proc.returns(Pattern)) }
 def late
   currify(:_late)
 end
@@ -343,7 +348,7 @@ end
 
 #  A continuous pattern as a function from time to values. Takes the
 #  midpoint of the given query as the time value.
-# sig { params(time_fun: T.proc.params(time: Rational).returns(T.untyped)).returns(Pattern) }
+sig { params(time_fun: T.proc.params(time: Rational).returns(T.untyped)).returns(Pattern) }
 def signal(time_fun)
   query = lambda do |span|
     midpoint = span.start + (span.stop - span.start) / 2
