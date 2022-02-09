@@ -24,14 +24,14 @@ stream.pattern = (
    s(
      stack(
        [
-         pure("gabba").fast(pure(4)),
-         pure("cp").fast(pure(3))
+         fast[4, "gabba"],
+         fast[3, "cp"]
        ]
      )
    ) >>
-   speed(sequence([pure(2), pure(3)])) >>
-   room(pure(0.5)) >>
-   size(pure(0.8))
+   speed([2, 3]) >>
+   room(0.5) >>
+   size(0.8) >>
  )
 sleep(2)
 
