@@ -161,7 +161,7 @@ module Cyclone
   # A continuous value
   sig { params(value: T.untyped).returns(Pattern) }
   def steady(value)
-    signal ->(_t) { value }
+    signal ->(_) { value }
   end
 
   sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
