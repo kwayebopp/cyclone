@@ -6,6 +6,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 Dir[File.join(__dir__, "cyclone", "*.rb")].each { |file| require file }
 Dir[File.join(__dir__, "stream", "*.rb")].each { |file| require file }
 require_relative "./rational"
+require_relative "./proc"
 require "cyclone"
 
 include Cyclone
@@ -24,8 +25,8 @@ stream.pattern = (
    s(
      stack(
        [
-         fast[4, "gabba"],
-         fast[3, "cp"]
+         fast[4] < "gabba",
+         fast[3] < "cp"
        ]
      )
    ) >>
