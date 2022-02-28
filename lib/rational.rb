@@ -21,6 +21,9 @@ class Rational
   end
 
   # Returns a TimeSpan representing the begin and end of the Time value's cycle
+  #  e.g.
+  #  Rational(1, 4).whole_cycle => TimeSpan(0, 1)
+  # 1.5.whole_cycle => TimeSpan(1, 2)
   sig { returns(Cyclone::TimeSpan) }
   def whole_cycle
     Cyclone::TimeSpan.new(sample, next_sample)

@@ -11,7 +11,7 @@ module Cyclone
     extend T::Sig
     Time = T.type_alias { T.any(Integer, Float, Rational) }
     TimeLambda = T.type_alias { T.proc.params(rat: Rational).returns(Rational) }
-    SpanLambda = T.type_alias { T.proc.params(span: TimeSpan).returns(TimeSpan) }
+    SpanLambda = T.type_alias { T.proc.params(span: T.nilable(TimeSpan)).returns(TimeSpan) }
 
     sig { returns(Rational) }
     attr_accessor :start, :stop

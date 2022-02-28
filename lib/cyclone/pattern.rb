@@ -61,7 +61,7 @@ module Cyclone
 
     # Returns a new `Pattern`, with the function applied to each `Event`
     # timespan.
-    sig { params(fun: T.proc.params(span: T.nilable(TimeSpan)).returns(TimeSpan)).returns(Pattern) }
+    sig { params(fun: TimeSpan::SpanLambda).returns(Pattern) }
     def with_event_span(fun)
       query = lambda do |span|
         self.query.call(span).map { |event| event.with_span(fun) }
@@ -79,7 +79,7 @@ module Cyclone
 
     # Returns a new `Pattern`, with the function applied to the value of
     # each `Event`. It has the alias 'fmap'
-    sig { params(fun: T.proc.params(value: T.untyped).returns(T.untyped)).returns(Pattern) }
+    sig { params(fun: Event::ValueLambda).returns(Pattern) }
     def with_value(fun)
       query = lambda do |span|
         self.query.call(span).map { |event| event.with_value(fun) }
@@ -426,6 +426,15 @@ module Cyclone
 
     sig { params(other: T.untyped).returns(Pattern) }
     def +(other)
+      # if instance_of?(Control) && other.instance_of?(Control)
+      #   return  fmap(->(x) { ->(y) {
+      #     if x.key?("sound") && y.key?("n")
+      #       {"sound" => "#{x["sound"]}:#{y["n"]}"}
+      #     elsif x.key?("n") && y.key?("n")
+      #       {"n" => x["n"] + y["n"]}
+      #     end
+      #    } }).appl(self.class.reify(other)) 
+      # end
       fmap(->(x) { ->(y) { x + y } }).app(self.class.reify(other))
     end
 

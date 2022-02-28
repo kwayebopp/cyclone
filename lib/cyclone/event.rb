@@ -15,6 +15,8 @@ require "sorbet-runtime"
 module Cyclone
   class Event
     extend T::Sig
+    ValueLambda = T.type_alias { T.proc.params(value: T.untyped).returns(T.untyped) }
+
 
     sig { returns(T.nilable(Cyclone::TimeSpan)) }
     attr_accessor :whole
@@ -38,8 +40,7 @@ module Cyclone
     end
 
     # Returns a new `Event` with the function fun applied to the event `TimeSpan`s.
-    # I'd use a `SpanLambda` here, but need to allow for `nil` for the event `whole`
-    sig { params(fun: T.proc.params(span: T.nilable(Cyclone::TimeSpan)).returns(Cyclone::TimeSpan)).returns(Event) }
+    sig { params(fun: TimeSpan::SpanLambda).returns(Event) }
     def with_span(fun)
       self.class.new(
         whole.nil? ? nil : fun.call(whole),
@@ -49,7 +50,7 @@ module Cyclone
     end
 
     # Returns a new `Event` with the function `fun` applies to the event `value`.
-    sig { params(fun: T.proc.params(value: T.untyped).returns(T.untyped)).returns(Cyclone::Event) }
+    sig { params(fun: ValueLambda).returns(Cyclone::Event) }
     def with_value(fun)
       self.class.new(whole, part, fun.call(value))
     end
