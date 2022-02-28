@@ -16,10 +16,10 @@ GEM
       method_source (~> 1.0)
     pycall (1.4.1)
     rake (13.0.6)
-    sorbet (0.5.9623)
-      sorbet-static (= 0.5.9623)
-    sorbet-runtime (0.5.9623)
-    sorbet-static (0.5.9623-x86_64-linux)
+    sorbet (0.5.9694)
+      sorbet-static (= 0.5.9694)
+    sorbet-runtime (0.5.9694)
+    sorbet-static (0.5.9694-x86_64-linux)
     superators19 (0.9.3)
 
 PLATFORMS
