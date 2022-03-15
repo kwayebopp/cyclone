@@ -13,14 +13,15 @@ require "bundler/setup"
 require "irb"
 require "irb/completion"
 
-require "cyclone"
-require_relative "../lib/cyclone/pattern"
-require_relative "../lib/cyclone/event"
-require_relative "../lib/cyclone/time_span"
-require_relative "../lib/rational"
-require_relative "../lib/stream/super_dirt_stream"
-require_relative "../lib/stream/link_clock"
+require_relative "../lib/cyclone/boot"
 
-include Cyclone
+puts("Welcome to the Cyclone interactive shell!")
+puts()
+puts("use `p(name, pattern)` to name a stream and set its pattern")
+puts("use `hush` to silence all streams")
+puts()
+
+clock.start
+alias q exit
 
 IRB.start(__FILE__)
