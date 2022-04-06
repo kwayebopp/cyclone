@@ -616,4 +616,6 @@ module Cyclone
       value.instance_of?(Hash)
     end
   end
+
+  C = Control
 end
