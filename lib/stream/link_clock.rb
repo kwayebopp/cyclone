@@ -17,6 +17,8 @@ class LinkClock
 
   sig { returns(T.any(Float, Integer)) }
   attr_accessor :bpm
+  
+  attr_reader :link
 
   sig { params(bpm: T.any(Float, Integer)).void }
   def initialize(bpm = 120)
