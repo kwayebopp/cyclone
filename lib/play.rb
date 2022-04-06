@@ -29,7 +29,7 @@ stream.pattern = (
          fast[3] < "cp"
        ]
      )
-   ) >>
+   ).every(3, fast[2]) >>
    speed([2, 3]) >>
    room(0.5) >>
    size(0.8)
