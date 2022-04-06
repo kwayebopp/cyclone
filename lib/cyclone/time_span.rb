@@ -55,6 +55,11 @@ module Cyclone
       intersection.stop > intersection.start ? intersection : nil
     end
 
+    sig { returns(Numeric) }
+    def midpoint
+      (start + ((stop - start) / 2))
+    end
+
     sig { params(thing: T.any(Time, TimeSpan)).returns(TimeSpan) }
     def self.reify(thing)
       return T.cast(thing, TimeSpan) if thing.instance_of?(TimeSpan)
