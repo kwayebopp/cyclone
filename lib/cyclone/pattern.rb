@@ -234,7 +234,7 @@ module Cyclone
     end
 
     sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
-    def self.polyrhythm(things, steps: nil)
+    def self.polymeter(things, steps: nil)
       sequences = things.map { |thing| _sequence(thing) }
       return silence if sequences.empty?
 
@@ -250,18 +250,19 @@ module Cyclone
       stack patterns
     end
     class << self
-      alias pr polyrhythm
+      alias pm polymeter
     end
 
+
     sig { params(things: T::Array[T.untyped]).returns(Pattern) }
-    def self.polymeter(things)
+    def self.polyrhythm(things)
       sequences = things.map { |thing| sequence(thing) }
       return silence if sequences.empty?
 
       stack sequences
     end
     class << self
-      alias pm polymeter
+      alias pr polyrhythm
     end
 
     # Pattern Controls

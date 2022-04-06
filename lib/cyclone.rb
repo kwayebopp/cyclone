@@ -99,19 +99,19 @@ module Cyclone
       query_span: TimeSpan.new(0, 1)
     )
 
-    puts("\n== POLYRHYTHM  ==\n")
+    puts("\n== POLYMETER  ==\n")
     pattern_pretty_printing(
-      pattern: I.polyrhythm([[0, 1, 2, 3], [20, 30]]),
+      pattern: I.polymeter([[0, 1, 2, 3], [20, 30]]),
       query_span: TimeSpan.new(0, 1)
     )
 
-    puts("\n== POLYRHYTHM (fewer steps) ==\n")
+    puts("\n== POLYMETER (fewer steps) ==\n")
     pattern_pretty_printing(
-      pattern: I.polyrhythm([[0, 1, 2, 3], [20, 30]], steps: 2),
+      pattern: I.polymeter([[0, 1, 2, 3], [20, 30]], steps: 2),
       query_span: TimeSpan.new(0, 1)
     )
 
-    puts("\n== POLYMETER ==\n")
+    puts("\n== POLYRHYTHM ==\n")
     pattern_pretty_printing(
       pattern: I.polymeter([[0, 1, 2, 3], [20, 30]]),
       query_span: TimeSpan.new(0, 1)
@@ -215,7 +215,7 @@ module Cyclone
   end
 
   sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
-  def polyrhythm(things, steps: nil)
+  def polymeter(things, steps: nil)
     return silence if things.empty?
 
     klass =
@@ -225,24 +225,24 @@ module Cyclone
         guess_value_class(things.first)
       end
 
-    klass.polyrhythm(things, steps: steps)
-  end
-  alias pr polyrhythm
-
-  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
-  def polymeter(things)
-    return silence if things.empty?
-
-    klass =
-      if things.first.instance_of?(Pattern)
-        T.cast(things.first, Pattern).class
-      else
-        guess_value_class(things.first)
-      end
-
-    klass.polymeter(things)
+    klass.polymeter(things, steps: steps)
   end
   alias pm polymeter
+
+  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
+  def polyrhythm(things)
+    return silence if things.empty?
+
+    klass =
+      if things.first.instance_of?(Pattern)
+        T.cast(things.first, Pattern).class
+      else
+        guess_value_class(things.first)
+      end
+
+    klass.polyrhythm(things)
+  end
+  alias pr polyrhythm
 
   ########### Controls
 
