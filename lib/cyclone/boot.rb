@@ -41,6 +41,7 @@ end
 def list_streams
   @streams.keys
 end
+alias ls list_streams
 
 def mute_streams(*keys)
   keys.each do |k|
@@ -48,7 +49,7 @@ def mute_streams(*keys)
   end
 end
 
-alias mute mute_streams
+alias m mute_streams
 
 def solo_streams(*keys)
   @streams.each do |key, stream|
@@ -71,5 +72,9 @@ def kill_streams(*keys)
     @streams.delete(k)
   end
 end
-alias kill kill_streams
+alias ks kill_streams
 
+def clear
+  system 'clear'
+end
+alias c clear
