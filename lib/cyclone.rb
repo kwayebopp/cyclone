@@ -237,15 +237,15 @@ module Cyclone
     Pattern.vowel(pattern)
   end
 
-  # sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
-  # def n(pattern)
-  #   Pattern.n(pattern)
-  # end
+  sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
+  def n(pattern)
+    Pattern.n(pattern)
+  end
 
-  # sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
-  # def note(pattern)
-  #   Pattern.note(pattern)
-  # end
+  sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
+  def note(pattern)
+    Pattern.note(pattern)
+  end
 
   sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def rate(pattern)
@@ -257,10 +257,10 @@ module Cyclone
     Pattern.gain(pattern)
   end
 
-  # sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
-  # def pan(pattern)
-  #   Pattern.pan(pattern)
-  # end
+  sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+  def pan(pattern)
+    Pattern.pan(pattern)
+  end
 
   sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def speed(pattern)
@@ -277,16 +277,16 @@ module Cyclone
     Pattern.size(pattern)
   end
 
-  # sig { params(pattern: Pattern).returns(Pattern) }
-  # def rev(pattern)
-  #   pattern.rev
-  # end
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def rev(pattern)
+    pattern.rev
+  end
 
-  # # the c stands for "currified"
-  # sig { returns(T.proc.returns(Pattern)) }
-  # def revc
-  #   Cyclone.method(:rev).curry(1)
-  # end
+  # the c stands for "currified"
+  sig { returns(T.proc.returns(Pattern)) }
+  def revc
+    Cyclone.method(:rev).curry(1)
+  end
 
   sig { returns(T.proc.returns(Pattern)) }
   def fast

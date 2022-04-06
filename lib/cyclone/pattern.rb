@@ -101,7 +101,7 @@ module Cyclone
       self.class.new(query)
     end
 
-    sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern)).returns(Pattern) }
+    sig { override(allow_incompatible: true).params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern)).returns(Pattern) }
     def every(count, fun)
       Pattern.slowcat([fun.call(self)] + ([self] * (count - 1)))
     end
@@ -151,6 +151,76 @@ module Cyclone
       Pattern.sequence(offset).fmap(->(ofst) { _late(ofst) }).outer_join
     end
 
+    sig { override(allow_incompatible: true).params(
+      binary_pattern: T.any(Pattern, T.untyped, T::Array[T.untyped]), 
+      fun: T.proc.params(pattern: Pattern).returns(Pattern)
+    ).returns(Pattern) }
+    def when(binary_pattern, fun)
+      binary_pat = Pattern.sequence(binary_pattern)
+      true_pat = binary_pat.filter_values(Cyclone.id)
+      false_pat = binary_pat.filter_values(->(v) { !v })
+      with_pat = true_pat.fmap(->(_) { ->(y) { y } }).app_right(fun.call(self))
+      without_pat = false_pat.fmap(->(_) { ->(y) { y } }).app_right(self)
+      Pattern.stack([with_pat, without_pat])
+    end
+
+    sig { override(allow_incompatible: true).params(
+      time_pattern: RationalPattern,
+      fun: T.proc.params(pattern: Pattern).returns(Pattern)
+    ).returns(Pattern) }
+    def off(time_pattern, fun)
+      Pattern.stack([self, fun.call(early(time_pattern))])
+    end
+
+    sig {
+      override(allow_incompatible: true).params(
+        other: Pattern
+      ).returns(Pattern)
+    }
+    def append(other)
+      Pattern.fastcat([self, other])
+    end
+
+    sig { 
+      override(allow_incompatible: true).returns(Pattern)
+    }
+    def rev
+      query = lambda do |span|
+        cycle = span.start.sample
+        next_cycle = span.start.next_sample
+        reflect = lambda do |to_reflect|
+          reflected = to_reflect.with_time(->(time) { cycle + (next_cycle - time) })
+          TimeSpan.new(reflected.stop, reflected.start)
+        end
+        events = self.query.call(reflect.call(span))
+        events.map { |event| event.with_span(reflect) }
+      end
+
+      self.class.new(query).split_queries
+    end
+
+    sig { override(allow_incompatible: true).params(
+      func: T.proc.params(pattern: Pattern).returns(Pattern),
+      by: Numeric
+    ).returns(Pattern) }
+    def jux(func, by: 1)
+      by /= 2.0
+      elem_or = lambda do |dict, key, default|
+        return dict[key] if dict.key?(key)
+
+        default
+      end
+
+      left = self.with_value(->(val) { 
+        (val.to_a + [["pan", elem_or.call(val, "pan", 0.5) - by]].to_h)
+       })
+      right = self.with_value(->(val) {
+        (val.to_a + [["pan", elem_or.call(val, "pan", 0.5) + by]].to_h)
+      })
+
+      Pattern.stack([left, func.call(right)])
+    end
+
     sig { returns(T::Array[Event]) }
     def first_cycle
       query.call(TimeSpan.new(0, 1))
@@ -169,7 +239,7 @@ module Cyclone
     # Returns a pattern that repeats the given value once per cycle
     sig { params(value: T.untyped).returns(Pattern) }
     def self.pure(value)
-      raise ArgumentError unless check_type(value)
+      raise ArgumentError unless Pattern.check_type(value)
 
       query = lambda do |span|
         span.span_cycles.map do |s|
@@ -188,6 +258,7 @@ module Cyclone
     # (currently behaves slightly differently from Tidal)
     sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
     def self.slowcat(patterns)
+      patterns.map! { |p| reify(p) }
       query = lambda do |span|
         pattern = patterns[span.start.floor % patterns.size]
         T.must(pattern).query.call(span)
@@ -209,6 +280,7 @@ module Cyclone
     # Pile up patterns
     sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
     def self.stack(patterns)
+      patterns.map! { |p| reify(p) }
       query = lambda do |span|
         patterns.flat_map { |pattern| pattern.query.call(span) }
       end
@@ -219,6 +291,9 @@ module Cyclone
     sig { params(thing: T.any(T::Array[T.untyped], Pattern, T.untyped)).returns(Pattern) }
     def self.sequence(thing)
       _sequence(thing).first
+    end
+    class << self
+      alias sq sequence
     end
 
     sig { params(thing: T.any(T::Array[T.untyped], Pattern, T.untyped)).returns([Pattern, Integer]) }
@@ -270,12 +345,12 @@ module Cyclone
       params(
         control_name: T.any(Symbol, String),
         pattern: T.any(Pattern, T.untyped)
-      ).returns(Cyclone::Control)
+      ).returns(Pattern)
     end
     def self.make_control(control_name, pattern)
       control_lambda = ->(value) { {control_name.to_s => value} }
       pat = pattern.instance_of?(Pattern) ? T.cast(pattern, Pattern) : sequence(pattern)
-      Control.new(pat.fmap(control_lambda).query)
+      new(pat.fmap(control_lambda).query)
     end
 
     sig { params(pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
@@ -291,49 +366,49 @@ module Cyclone
       make_control(:vowel, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.n(pattern)
       make_control(:n, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.note(pattern)
       make_control(:note, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.rate(pattern)
       make_control(:rate, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.gain(pattern)
       make_control(:gain, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.pan(pattern)
       make_control(:pan, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.speed(pattern)
       make_control(:speed, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.room(pattern)
       make_control(:room, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
     def self.size(pattern)
       make_control(:size, pattern)
     end
 
     sig { params(thing: T.untyped).returns(Pattern) }
     def self.reify(thing)
-      return thing if thing.instance_of?(self)
+      return thing if thing.instance_of?(Pattern)
 
       pure(thing)
     end
@@ -350,7 +425,7 @@ module Cyclone
 
     # Tidal's `<*` operator
     sig { params(pattern_of_vals: Pattern).returns(Pattern) }
-    def appl(pattern_of_vals)
+    def app_left(pattern_of_vals)
       whole_fun = lambda do |this, that|
         return this unless this.nil? || that.nil?
       end
@@ -360,13 +435,23 @@ module Cyclone
 
     # Tidal's `*>` operator
     sig { params(pattern_of_vals: Pattern).returns(Pattern) }
-    def appr(pattern_of_vals)
+    def app_right(pattern_of_vals)
       whole_fun = lambda do |this, that|
         return that unless this.nil? || that.nil?
       end
 
       _app_whole(whole_fun, pattern_of_vals)
     end
+
+    #  Tidal's `<*>` operator
+    sig { params(pattern_of_vals: Pattern).returns(Pattern) }
+    def app_both(pattern_of_vals)
+      whole_fun = lambda do |this, that|
+        this.intersect(that) unless this.nil? || that.nil?
+      end
+      _app_whole(whole_fun, pattern_of_vals)
+    end
+
 
     sig do
       params(
@@ -427,28 +512,28 @@ module Cyclone
 
     sig { params(other: T.untyped).returns(Pattern) }
     def +(other)
-      # if instance_of?(Control) && other.instance_of?(Control)
+      # if instance_of?(ControlPattern) && other.instance_of?(ControlPattern)
       #   return  fmap(->(x) { ->(y) {
       #     if x.key?("sound") && y.key?("n")
       #       {"sound" => "#{x["sound"]}:#{y["n"]}"}
       #     elsif x.key?("n") && y.key?("n")
       #       {"n" => x["n"] + y["n"]}
       #     end
-      #    } }).appl(self.class.reify(other)) 
+      #    } }).app_left(self.class.reify(other)) 
       # end
-      fmap(->(x) { ->(y) { x + y } }).app(self.class.reify(other))
+      fmap(->(x) { ->(y) { x + y } }).app_left(self.class.reify(other))
     end
 
     sig { params(other: T.untyped).returns(Pattern) }
     def -(other)
-      fmap(->(x) { ->(y) { x - y } }).app(self.class.reify(other))
+      fmap(->(x) { ->(y) { x - y } }).app_left(self.class.reify(other))
     end
 
     # The union of two patterns of dictionaries, with values from left
     # replacing any with the same name from the right
     sig { params(other: Pattern).returns(Pattern) }
     def <<(other)
-      fmap(->(x) { ->(y) { {**y, **x} } }).app(other)
+      fmap(->(x) { ->(y) { {**y, **x} } }).app_left(other)
     end
 
     # Overrides the >> operator to support combining patterns of
@@ -457,12 +542,32 @@ module Cyclone
     # any with the same name from the left
     sig { params(other: Pattern).returns(Pattern) }
     def >>(other)
-      fmap(->(x) { ->(y) { {**x, **y} } }).app(other)
+      fmap(->(x) { ->(y) { {**x, **y} } }).app_left(other)
     end
 
     sig { returns(String) }
     def inspect
       query.call(TimeSpan.new(0, 1)).inspect
+    end
+
+    sig { params(event_test: T.proc.params(e: Event).returns(T::Boolean)).returns(Pattern) }
+    def filter_events(event_test)
+      query = lambda do |span|
+        self.query.call(span).filter do |event|
+          event_test.call(event)
+        end
+      end
+      self.class.new(query)
+    end
+
+    sig { params(value_test: T.proc.params(v: T.untyped).returns(T::Boolean)).returns(Pattern) }
+    def filter_values(value_test)
+      query = lambda do |span|
+        self.query.call(span).filter do |event|
+          value_test.call(event.value)
+        end
+      end
+      self.class.new(query)
     end
 
     private
@@ -538,16 +643,6 @@ module Cyclone
   class StringPattern < Pattern
     extend T::Sig
 
-    class << self
-      undef_method(:n)
-      undef_method(:note)
-      undef_method(:rate)
-      undef_method(:gain)
-      undef_method(:pan)
-      undef_method(:speed)
-      undef_method(:room)
-      undef_method(:size)
-    end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
@@ -558,12 +653,6 @@ module Cyclone
   S = StringPattern
   class FloatPattern < Pattern
     extend T::Sig
-
-    class << self
-      undef_method(:s)
-      undef_method(:sound)
-      undef_method(:vowel)
-    end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
@@ -576,12 +665,6 @@ module Cyclone
   class IntegerPattern < Pattern
     extend T::Sig
 
-    class << self
-      undef_method(:s)
-      undef_method(:sound)
-      undef_method(:vowel)
-    end
-
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
       value.instance_of?(Integer)
@@ -593,11 +676,6 @@ module Cyclone
   class RationalPattern < Pattern
     extend T::Sig
 
-    class << self
-      undef_method(:s)
-      undef_method(:sound)
-      undef_method(:vowel)
-    end
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
@@ -608,7 +686,7 @@ module Cyclone
   R = RationalPattern
 
 
-  class Control < Pattern
+  class ControlPattern < Pattern
     extend T::Sig
 
     sig { params(value: T.untyped).returns(T::Boolean) }
@@ -617,5 +695,5 @@ module Cyclone
     end
   end
 
-  C = Control
+  C = ControlPattern
 end
