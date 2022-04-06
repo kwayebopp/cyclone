@@ -55,7 +55,7 @@ module Cyclone
     pattern_pretty_printing(
       # recall that fast (no underscore) takes a `pattern_of_factors` as an argument
       # and returns a pattern
-      pattern: c.fast(S.fastcat([F.pure(2), F.pure(4)])),
+      pattern: c.fast([2, 4]),
       query_span: TimeSpan.new(0, 1)
     )
 
@@ -85,8 +85,8 @@ module Cyclone
 
     # Add number patterns together
     puts("\n== ADDITION ==\n")
-    numbers = F.fastcat([2, 3, 4, 5].map { |v| F.pure(v) })
-    more_numbers = F.fastcat([F.pure(10), F.pure(100)])
+    numbers = sequence([2, 3, 4, 5])
+    more_numbers = sequence([10, 100])
     pattern_pretty_printing(
       pattern: numbers + more_numbers,
       query_span: TimeSpan.new(0, 1)
@@ -132,16 +132,17 @@ module Cyclone
         T.class_of(I),
         T.class_of(R),
         T.class_of(S),
-        T.class_of(Control)
+        T.class_of(C)
       )
     )
   end
   def guess_value_class(value)
+    # return guess_value_class(value.first) if value.instance_of? Array
     return I if I.check_type(value)
     return S if S.check_type(value)
     return F if F.check_type(value)
     return R if R.check_type(value)
-    return Control if Control.check_type(value)
+    return C if C.check_type(value)
 
     Pattern
   end
@@ -161,7 +162,8 @@ module Cyclone
   # A continuous value
   sig { params(value: T.untyped).returns(Pattern) }
   def steady(value)
-    signal ->(_) { value }
+    query = ->(span) { [Event.new(nil, span, value)] }
+    Pattern.new(query)
   end
 
   sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
@@ -186,33 +188,11 @@ module Cyclone
     T.cast(patterns.first, Pattern).class.stack(patterns)
   end
 
-  sig { params(things: T::Array[T.untyped]).returns(T.any(Pattern, [Pattern, Integer])) }
-  def _sequence(things)
-    return silence if things.empty?
-
-    klass =
-      if things.first.instance_of(Pattern)
-        T.cast(things.first, Pattern).class
-      else
-        guess_value_class(things.first)
-      end
-
-    klass._sequence(things)
-  end
-
-  sig { params(things: T::Array[T.untyped]).returns(Pattern) }
+  sig { params(things: T::Array[T.untyped]).returns(Pattern) }  
   def sequence(things)
-    return silence if things.empty?
-
-    klass =
-      if things.first.instance_of?(Pattern)
-        T.cast(things.first, Pattern).class
-      else
-        guess_value_class(things.first)
-      end
-
-    klass.sequence(things)
+    Pattern.sequence(things)
   end
+  alias sq sequence
 
   sig { params(things: T::Array[T.untyped], steps: T.nilable(Integer)).returns(Pattern) }
   def polymeter(things, steps: nil)
@@ -257,45 +237,56 @@ module Cyclone
     Pattern.vowel(pattern)
   end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def n(pattern)
-    Pattern.n(pattern)
-  end
+  # sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
+  # def n(pattern)
+  #   Pattern.n(pattern)
+  # end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def note(pattern)
-    Pattern.note(pattern)
-  end
+  # sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
+  # def note(pattern)
+  #   Pattern.note(pattern)
+  # end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
+  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def rate(pattern)
     Pattern.rate(pattern)
   end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
+  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def gain(pattern)
     Pattern.gain(pattern)
   end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def pan(pattern)
-    Pattern.pan(pattern)
-  end
+  # sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+  # def pan(pattern)
+  #   Pattern.pan(pattern)
+  # end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
+  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def speed(pattern)
     Pattern.speed(pattern)
   end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
+  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def room(pattern)
     Pattern.room(pattern)
   end
 
-  sig { params(pattern: T.any(F, I, R, Numeric, T::Array[Numeric])).returns(Pattern) }
+  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
   def size(pattern)
     Pattern.size(pattern)
   end
+
+  # sig { params(pattern: Pattern).returns(Pattern) }
+  # def rev(pattern)
+  #   pattern.rev
+  # end
+
+  # # the c stands for "currified"
+  # sig { returns(T.proc.returns(Pattern)) }
+  # def revc
+  #   Cyclone.method(:rev).curry(1)
+  # end
 
   sig { returns(T.proc.returns(Pattern)) }
   def fast
@@ -317,18 +308,86 @@ module Cyclone
     Cyclone.method(:_late).curry(2)
   end
 
+  sig { returns(T.proc.returns(Pattern)) }
+  def every
+    Cyclone.method(:_every).curry(3)
+  end
+
   ########### Signals
 
   #  A continuous pattern as a function from time to values. Takes the
   #  midpoint of the given query as the time value.
-  sig { params(time_fun: T.proc.params(time: Rational).returns(T.untyped)).returns(Pattern) }
+  sig do
+    params(
+      time_fun: T.proc.params(time: Numeric).returns(T.untyped)
+    ).returns(Pattern)
+  end
   def signal(time_fun)
     query = lambda do |span|
-      midpoint = span.start + (span.stop - span.start) / 2
-      [Event.new(nil, span, time_fun.call(midpoint.to_r))]
+      [Event.new(nil, span, time_fun.call(span.midpoint))]
     end
 
     Pattern.new(query)
+  end
+
+  sig { returns(Pattern) }
+  def sine2
+    signal(->(t) { Math.sin(Math::PI * 2 * t) })
+  end
+
+  sig { returns(Pattern) }
+  def sine
+    signal(->(t) { (Math.sin(Math::PI * 2 * t) + 1) / 2 })
+  end
+
+  sig { returns(Pattern) }
+  def cosine2 
+    sine2.early(0.25)
+  end
+
+  sig { returns(Pattern) }
+  def cosine
+    sine.early(0.25)
+  end
+
+  sig { returns(Pattern) }
+  def saw2 
+    signal(->(t) { (t % 1) * 2 })
+  end
+
+  sig { returns(Pattern) }
+  def saw
+    signal(->(t) { t % 1 })
+  end
+
+  sig { returns(Pattern) }
+  def isaw2
+    signal(->(t) { (1 - (t % 1)) * 2 })
+  end
+
+  sig { returns(Pattern) }
+  def isaw
+    signal(->(t) { 1 - (t % 1) })
+  end
+
+  sig { returns(Pattern) }
+  def tri2
+    fastcat([isaw2, saw2])
+  end
+
+  sig { returns(Pattern) }
+  def tri
+    fastcat([isaw, saw])
+  end
+
+  sig { returns(Pattern) }
+  def square2 
+    signal(->(t) { (((t * 2) % 2).floor * 2) - 1 })
+  end
+
+  sig { returns(Pattern) }
+  def square  
+    signal(->(t) { ((t * 2) % 2).floor })
   end
 
   private
@@ -356,5 +415,10 @@ module Cyclone
   sig { params(offset: T.any(F, I, R, Numeric, T::Array[Numeric]), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
   def _late(offset, pattern)
     Pattern.sequence(pattern).late(offset)
+  end
+
+  sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
+  def _every(count, fun, pattern)
+    Pattern.sequence(pattern).every(count, fun)
   end
 end
