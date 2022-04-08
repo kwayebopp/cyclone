@@ -43,9 +43,9 @@ module Cyclone
     puts "\n== SAME BUT FASTER ==\n"
     puts 'Like: fast 4 "hello world"'
     pattern_pretty_printing(
-      # recall that `_fast` takes a `factor` as an argument
+      # recall that `faster` takes a `factor` as an argument
       #  and returns a pattern
-      pattern: c._fast(2),
+      pattern: c.faster(2),
       query_span: TimeSpan.new(0, 1)
     )
 
@@ -154,10 +154,10 @@ module Cyclone
   end
 
   sig { params(value: T.untyped).returns(Pattern) }
-  def pure(value)
-    guess_value_class(value).pure(value)
+  def atom(value)
+    guess_value_class(value).atom(value)
   end
-  alias atom pure
+  alias pure atom
 
   # A continuous value
   sig { params(value: T.untyped).returns(Pattern) }
@@ -166,26 +166,26 @@ module Cyclone
     Pattern.new(query)
   end
 
-  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  sig { params(patterns: T::Array[T.untyped]).returns(Pattern) }
   def slowcat(patterns)
     return silence if patterns.empty?
 
-    T.cast(patterns.first, Pattern).class.slowcat(patterns)
+    Pattern.slowcat(patterns)
   end
 
-  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  sig { params(patterns: T::Array[T.untyped]).returns(Pattern) }
   def fastcat(patterns)
     return silence if patterns.empty?
 
-    T.cast(patterns.first, Pattern).class.fastcat(patterns)
+    Pattern.fastcat(patterns)
   end
   alias cat fastcat
 
-  sig { params(patterns: T::Array[Pattern]).returns(Pattern) }
+  sig { params(patterns: T::Array[T.untyped]).returns(Pattern) }
   def stack(patterns)
     return silence if patterns.empty?
 
-    T.cast(patterns.first, Pattern).class.stack(patterns)
+    Pattern.stack(patterns)
   end
 
   sig { params(things: T::Array[T.untyped]).returns(Pattern) }  
@@ -290,27 +290,27 @@ module Cyclone
 
   sig { returns(T.proc.returns(Pattern)) }
   def fast
-    Cyclone.method(:_fast).curry(2)
+    Cyclone.method(:inverted_fast).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
   def slow
-    Cyclone.method(:_slow).curry(2)
+    Cyclone.method(:inverted_slow).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
   def early
-    Cyclone.method(:_early).curry(2)
+    Cyclone.method(:inverted_early).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
   def late
-    Cyclone.method(:_late).curry(2)
+    Cyclone.method(:inverted_late).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
   def every
-    Cyclone.method(:_every).curry(3)
+    Cyclone.method(:inverted_every).curry(3)
   end
 
   ########### Signals
@@ -392,33 +392,28 @@ module Cyclone
 
   private
 
-  sig { params(mthd: Method).returns(T.proc.returns(T.untyped)) }
-  def currify(mthd)
-    mthd.curry(mthd.arity)
-  end
-
   sig { params(factor: T.any(F, I, R, Numeric, T::Array[Numeric]), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
-  def _fast(factor, pattern)
+  def inverted_fast(factor, pattern)
     Pattern.sequence(pattern).fast(factor)
   end
 
   sig { params(factor: T.any(F, I, R, Numeric, T::Array[Numeric]), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
-  def _slow(factor, pattern)
+  def inverted_slow(factor, pattern)
     Pattern.sequence(pattern).slow(factor)
   end
 
   sig { params(offset: T.any(F, I, R, Numeric, T::Array[Numeric]), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
-  def _early(offset, pattern)
+  def inverted_early(offset, pattern)
     Pattern.sequence(pattern).early(offset)
   end
 
   sig { params(offset: T.any(F, I, R, Numeric, T::Array[Numeric]), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
-  def _late(offset, pattern)
+  def inverted_late(offset, pattern)
     Pattern.sequence(pattern).late(offset)
   end
 
   sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
-  def _every(count, fun, pattern)
+  def inverted_every(count, fun, pattern)
     Pattern.sequence(pattern).every(count, fun)
   end
 end

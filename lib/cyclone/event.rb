@@ -29,6 +29,11 @@ module Cyclone
 
     sig { params(whole: T.nilable(Cyclone::TimeSpan), part: Cyclone::TimeSpan, value: T.untyped).void }
     def initialize(whole, part, value)
+      # raise an error if `part` is not contained within `whole`
+      unless whole.nil? || whole.include?(part)
+        raise ArgumentError, "part (#{part}) must be smaller than or equal to whole #{(whole)}"
+      end
+
       @whole = whole
       @part = part
       @value = value

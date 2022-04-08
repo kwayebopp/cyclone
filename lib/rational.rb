@@ -11,7 +11,7 @@ class Rational
   #  Returns the start of the cycle.
   sig { returns(Rational) }
   def sample
-    Rational(floor)
+    floor.to_r
   end
 
   # Returns the start of the next cycle.

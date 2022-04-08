@@ -9,7 +9,7 @@ require "sorbet-runtime"
 module Cyclone
   class TimeSpan
     extend T::Sig
-    Time = T.type_alias { T.any(Integer, Float, Rational) }
+    Time = T.type_alias { T.any(Integer, Float, String, Rational) }
     TimeLambda = T.type_alias { T.proc.params(rat: Rational).returns(Rational) }
     SpanLambda = T.type_alias { T.proc.params(span: T.nilable(TimeSpan)).returns(TimeSpan) }
 
@@ -64,13 +64,18 @@ module Cyclone
     def self.reify(thing)
       return T.cast(thing, TimeSpan) if thing.instance_of?(TimeSpan)
 
-      is_time = thing.instance_of?(Integer) || thing.instance_of?(Float) || thing.instance_of?(Rational)
-      if is_time
+      if thing.respond_to?(:to_r)
         time = T.cast(thing, Time)
         return TimeSpan.new(time, time)
       end
 
-      raise ArgumentError, "Cannot reify #{thing.class} as TimeSpan"
+      raise ArgumentError, "Cannot reify #{thing.class.name} as TimeSpan"
+    end
+
+    sig { params(other: T.any(Time, TimeSpan)).returns(T::Boolean) }
+    def include?(other)
+      other_timespan = self.class.reify(other)
+      start <= other_timespan.start && stop >= other_timespan.stop
     end
 
     sig { params(other: T.untyped).returns(TimeSpan) }
