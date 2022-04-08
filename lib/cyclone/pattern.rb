@@ -345,16 +345,15 @@ module Cyclone
     sig do
       params(
         control_name: T.any(Symbol, String),
-        pattern: T.any(Pattern, T.untyped)
+        pattern: T.untyped
       ).returns(Pattern)
     end
     def self.make_control(control_name, pattern)
       control_lambda = ->(value) { {control_name.to_s => value} }
-      pat = pattern.instance_of?(Pattern) ? T.cast(pattern, Pattern) : sequence(pattern)
-      new(pat.fmap(control_lambda).query)
+      sequence(pattern).fmap(control_lambda)
     end
 
-    sig { params(pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.sound(pattern)
       make_control(:sound, pattern)
     end
@@ -362,47 +361,47 @@ module Cyclone
       alias s sound
     end
 
-    sig { params(pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.vowel(pattern)
       make_control(:vowel, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.n(pattern)
       make_control(:n, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.note(pattern)
       make_control(:note, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.rate(pattern)
       make_control(:rate, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.gain(pattern)
       make_control(:gain, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.pan(pattern)
       make_control(:pan, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.speed(pattern)
       make_control(:speed, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.room(pattern)
       make_control(:room, pattern)
     end
 
-    sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
+    sig { params(pattern: T.untyped).returns(Pattern) }
     def self.size(pattern)
       make_control(:size, pattern)
     end
