@@ -22,27 +22,31 @@ class LinkClock
 
   sig { params(bpm: T.any(Float, Integer)).void }
   def initialize(bpm = 120)
-    link = PyCall.import_module("link")
-
     @bpm = T.let(bpm, T.any(Float, Integer))
 
-    @link = T.let(link.Link.new(bpm), T.untyped)
+    @link = T.let(
+      PyCall.import_module("link").Link.new(@bpm),
+      T.untyped
+    )
 
     @subscribers = T.let([], T::Array[SuperDirtStream])
 
     @is_running = T.let(false, T::Boolean)
 
-    @mutex = T.let(Mutex.new, Mutex)
-
     @notify_thread = T.let(Thread.new {}, Thread)
+
+    @mutex = T.let(Mutex.new, Mutex)
   end
 
-  # Subscribe an object to recieve tick notifications.
+  # Subscribe an object to receive tick notifications.
   sig { params(subscriber: SuperDirtStream).void }
   def subscribe(subscriber)
-    Thread.new {
-      @mutex.synchronize { @subscribers << subscriber }
-    }.join
+    if subscriber.respond_to?(:notify_tick)
+      return Thread.new {
+        @mutex.synchronize { @subscribers << subscriber }
+      }.join
+    end
+    raise ArgumentError, "Subscriber does not respond to `notify_tick`" 
   end
 
   # Unsubscribe an object from receiving tick notifications.
@@ -51,6 +55,12 @@ class LinkClock
     Thread.new {
       @mutex.synchronize { @subscribers.delete(subscriber) }
     }.join
+  end
+
+  # Returns whether the clock is running right now.
+  sig { returns(T::Boolean) }
+  def running?
+    @is_running
   end
 
   # Start the clock.
@@ -78,12 +88,6 @@ class LinkClock
     @notify_thread.join
   end
 
-  # Returns whether the clock is running right now.
-  sig { returns(T::Boolean) }
-  def running?
-    @is_running
-  end
-
   private
 
   sig { void }
@@ -96,8 +100,8 @@ class LinkClock
 
   sig { void }
   def notify_thread_target
-    logger.info("Link enabled")
     @link.enabled = true
+    logger.info("Link enabled")
     @link.startStopSyncEnabled = true
 
     start = @link.clock.micros

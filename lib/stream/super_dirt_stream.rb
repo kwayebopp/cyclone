@@ -47,7 +47,16 @@ class SuperDirtStream
     @is_playing
   end
 
-  sig { params(cycle: [Float, Float], session_state: T.untyped, cps: Float, bpc: Integer, mill: Integer, now: Integer).void }
+  sig do 
+    params(
+      cycle: [Float, Float],
+      session_state: T.untyped,
+      cps: Float,
+      bpc: Integer,
+      mill: Integer,
+      now: Integer
+    ).void
+  end
   def notify_tick(cycle, session_state, cps, bpc, mill, now)
     return unless playing? && pattern
 
