@@ -50,7 +50,7 @@ class LinkClock
   end
 
   # Unsubscribe an object from receiving tick notifications.
-  sig { params(subscriber: SuperDirtStream).void }
+  sig { params(subscriber: T.nilable(SuperDirtStream)).void }
   def unsubscribe(subscriber)
     Thread.new {
       @mutex.synchronize { @subscribers.delete(subscriber) }
