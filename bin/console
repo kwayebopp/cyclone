@@ -13,7 +13,7 @@ require "bundler/setup"
 require "irb"
 require "irb/completion"
 
-require_relative "../lib/cyclone/boot"
+require_relative "../lib/cyclone/shell"
 
 cyclone_help
 clock.start
