@@ -15,12 +15,7 @@ require "irb/completion"
 
 require_relative "../lib/cyclone/boot"
 
-puts("Welcome to the Cyclone interactive shell!")
-puts()
-puts("use `p(name, pattern)` to name a stream and set its pattern")
-puts("use `hush` to silence all streams")
-puts()
-
+cyclone_help
 clock.start
 alias q exit
 
