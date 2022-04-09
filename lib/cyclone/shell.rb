@@ -1,4 +1,6 @@
+# typed: false
 require "cyclone"
+require_relative "../../myclone"
 require_relative "./pattern"
 require_relative "./event"
 require_relative "./time_span"
@@ -6,8 +8,12 @@ require_relative "../rational"
 require_relative "../stream/super_dirt_stream"
 require_relative "../stream/link_clock"
 require_relative "../proc"
+require_relative "./chords"
+require_relative "./control"
+
 
 include Cyclone
+include Cyclone::Chords
 
 @default_clock = LinkClock.new(120)
 @streams = {}
