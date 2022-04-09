@@ -188,7 +188,7 @@ module Cyclone
     Pattern.stack(patterns)
   end
 
-  sig { params(things: T::Array[T.untyped]).returns(Pattern) }  
+  sig { params(things: T.untyped).returns(Pattern) }  
   def sequence(things)
     Pattern.sequence(things)
   end
@@ -223,59 +223,6 @@ module Cyclone
     klass.polyrhythm(things)
   end
   alias pr polyrhythm
-
-  ########### Controls
-
-  sig { params(pattern: T.any(Pattern, S, String, T::Array[String])).returns(Pattern) }
-  def sound(pattern)
-    Pattern.sound(pattern)
-  end
-  alias s sound
-
-  sig { params(pattern: T.any(Pattern, S, String, T::Array[String])).returns(Pattern) }
-  def vowel(pattern)
-    Pattern.vowel(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
-  def n(pattern)
-    Pattern.n(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, String, Numeric, T::Array[T.any(String, Numeric)])).returns(Pattern) }
-  def note(pattern)
-    Pattern.note(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def rate(pattern)
-    Pattern.rate(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def gain(pattern)
-    Pattern.gain(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, Numeric, T::Array[T.any(Numeric, String)])).returns(Pattern) }
-  def pan(pattern)
-    Pattern.pan(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def speed(pattern)
-    Pattern.speed(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def room(pattern)
-    Pattern.room(pattern)
-  end
-
-  sig { params(pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-  def size(pattern)
-    Pattern.size(pattern)
-  end
 
   sig { params(pattern: Pattern).returns(Pattern) }
   def rev(pattern)

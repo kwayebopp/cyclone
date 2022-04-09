@@ -341,71 +341,6 @@ module Cyclone
       alias pr polyrhythm
     end
 
-    # Pattern Controls
-    sig do
-      params(
-        control_name: T.any(Symbol, String),
-        pattern: T.untyped
-      ).returns(Pattern)
-    end
-    def self.make_control(control_name, pattern)
-      control_lambda = ->(value) { {control_name.to_s => value} }
-      sequence(pattern).fmap(control_lambda)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.sound(pattern)
-      make_control(:sound, pattern)
-    end
-    class << self
-      alias s sound
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.vowel(pattern)
-      make_control(:vowel, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.n(pattern)
-      make_control(:n, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.note(pattern)
-      make_control(:note, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.rate(pattern)
-      make_control(:rate, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.gain(pattern)
-      make_control(:gain, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.pan(pattern)
-      make_control(:pan, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.speed(pattern)
-      make_control(:speed, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.room(pattern)
-      make_control(:room, pattern)
-    end
-
-    sig { params(pattern: T.untyped).returns(Pattern) }
-    def self.size(pattern)
-      make_control(:size, pattern)
-    end
-
     sig { params(thing: T.untyped).returns(Pattern) }
     def self.reify(thing)
       return thing if thing.instance_of?(self)
@@ -426,21 +361,41 @@ module Cyclone
     # Tidal's `<*` operator
     sig { params(pattern_of_values: Pattern).returns(Pattern) }
     def app_left(pattern_of_values)
-      whole_fun = lambda do |this, that|
-        return this unless this.nil? || that.nil?
+      pattern_of_functions = self
+      query = lambda do |span|
+        events = []
+        pattern_of_functions.query.call(span).each do |func_event|
+          value_events = pattern_of_values.query.call(func_event.part)
+          value_events.each do |value_event|
+            new_whole = func_event.whole
+            new_part = func_event.part.intersect(value_event.part)
+            new_value = func_event.value.call(value_event.value)
+            events << Event.new(new_whole, new_part, new_value)
+          end
+        end
+        events
       end
-
-      app_whole(whole_fun, pattern_of_values)
+      Pattern.new(query)
     end
 
     # Tidal's `*>` operator
     sig { params(pattern_of_values: Pattern).returns(Pattern) }
     def app_right(pattern_of_values)
-      whole_fun = lambda do |this, that|
-        return that unless this.nil? || that.nil?
+      pattern_of_functions = self
+      query = lambda do |span|
+        events = []
+        pattern_of_values.query.call(span).each do |value_event|
+          func_events = pattern_of_functions.query.call(value_event.part)
+          func_events.each do |func_event|
+            new_whole = value_event.whole
+            new_part = func_event.part.intersect(value_event.part)
+            new_value = func_event.value.call(value_event.value)
+            events << Event.new(new_whole, new_part, new_value)
+          end
+        end
+        events
       end
-
-      app_whole(whole_fun, pattern_of_values)
+      Pattern.new(query)
     end
 
     #  Tidal's `<*>` operator
@@ -532,7 +487,7 @@ module Cyclone
     # replacing any with the same name from the right
     sig { params(other: Pattern).returns(Pattern) }
     def <<(other)
-      fmap(->(x) { ->(y) { {**y, **x} } }).app(other)
+      fmap(->(x) { ->(y) { {**y, **x} } }).app_left(other)
     end
 
     # Overrides the >> operator to support combining patterns of
@@ -541,7 +496,7 @@ module Cyclone
     # any with the same name from the left
     sig { params(other: Pattern).returns(Pattern) }
     def >>(other)
-      fmap(->(x) { ->(y) { {**x, **y} } }).app(other)
+      fmap(->(x) { ->(y) { {**x, **y} } }).app_left(other)
     end
 
     sig { returns(String) }
@@ -647,7 +602,6 @@ module Cyclone
   class StringPattern < Pattern
     extend T::Sig
 
-
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
       value.instance_of?(String)
@@ -679,7 +633,6 @@ module Cyclone
 
   class RationalPattern < Pattern
     extend T::Sig
-
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
