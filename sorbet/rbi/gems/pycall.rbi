@@ -10,6 +10,7 @@
 # pycall-1.4.1
 
 module PyCall
+  def after_fork; end
   def builtins; end
   def callable?(obj); end
   def check_isclass(pyptr); end
@@ -23,11 +24,12 @@ module PyCall
   def iterable(obj); end
   def len(obj); end
   def same?(left, right); end
+  def self.after_fork; end
   def self.builtins; end
   def self.callable?(obj); end
   def self.check_isclass(pyptr); end
   def self.check_ismodule(pyptr); end
-  def self.const_missing(name); end
+  def self.const_missing(arg0); end
   def self.dir(obj); end
   def self.eval(expr, globals: nil, locals: nil); end
   def self.exec(code, globals: nil, locals: nil); end
@@ -41,13 +43,17 @@ module PyCall
   def self.sys; end
   def self.tuple(iterable = nil); end
   def self.with(ctx); end
+  def self.without_gvl; end
   def self.wrap_class(pytypeptr); end
   def self.wrap_module(pymodptr); end
+  def self.wrap_ruby_object(arg0); end
   def sys; end
   def tuple(iterable = nil); end
   def with(ctx); end
+  def without_gvl; end
   def wrap_class(pytypeptr); end
   def wrap_module(pymodptr); end
+  def wrap_ruby_object(arg0); end
 end
 module PyCall::Version
 end
@@ -58,7 +64,7 @@ end
 class PyCall::LibPythonFunctionNotFound < PyCall::Error
 end
 module PyCall::LibPython
-  def self.const_missing(name); end
+  def self.const_missing(arg0); end
   def self.handle; end
 end
 module PyCall::LibPython::Finder
@@ -80,6 +86,8 @@ end
 class PyCall::PyError < PyCall::Error
   def format_traceback; end
   def initialize(type, value, traceback); end
+  def self.fetch; end
+  def self.occurred?; end
   def to_s; end
   def traceback; end
   def type; end
@@ -157,4 +165,132 @@ class PyCall::IterableWrapper
   def each; end
   def initialize(obj); end
   include Enumerable
+end
+class PyCall::PyPtr < BasicObject
+  def ==(arg0); end
+  def ===(arg0); end
+  def __address__; end
+  def __ob_refcnt__; end
+  def __ob_type__; end
+  def class; end
+  def eql?(arg0); end
+  def hash; end
+  def initialize(arg0); end
+  def inspect; end
+  def is_a?(arg0); end
+  def kind_of?(arg0); end
+  def nil?; end
+  def none?; end
+  def null?; end
+  def object_id; end
+  def self.decref(arg0); end
+  def self.incref(arg0); end
+  def self.sizeof(arg0); end
+end
+class PyCall::PyTypePtr < PyCall::PyPtr
+  def <(arg0); end
+  def ===(arg0); end
+  def __ob_size__; end
+  def __tp_basicsize__; end
+  def __tp_flags__; end
+  def __tp_name__; end
+end
+module PyCall::LibPython::API
+  def PyList_GetItem(arg0, arg1); end
+  def PyList_Size(arg0); end
+  def PyObject_Dir(arg0); end
+  def builtins_module_ptr; end
+  def self.PyList_GetItem(arg0, arg1); end
+  def self.PyList_Size(arg0); end
+  def self.PyObject_Dir(arg0); end
+  def self.builtins_module_ptr; end
+end
+module PyCall::LibPython::Helpers
+  def call_object(*arg0); end
+  def callable?(arg0); end
+  def compare(arg0, arg1, arg2); end
+  def define_wrapper_method(arg0, arg1); end
+  def delitem(arg0, arg1); end
+  def dict_contains(arg0, arg1); end
+  def dict_each(arg0); end
+  def getattr(*arg0); end
+  def getitem(arg0, arg1); end
+  def hasattr?(arg0, arg1); end
+  def import_module(*arg0); end
+  def self.call_object(*arg0); end
+  def self.callable?(arg0); end
+  def self.compare(arg0, arg1, arg2); end
+  def self.define_wrapper_method(arg0, arg1); end
+  def self.delitem(arg0, arg1); end
+  def self.dict_contains(arg0, arg1); end
+  def self.dict_each(arg0); end
+  def self.getattr(*arg0); end
+  def self.getitem(arg0, arg1); end
+  def self.hasattr?(arg0, arg1); end
+  def self.import_module(*arg0); end
+  def self.sequence_contains(arg0, arg1); end
+  def self.sequence_each(arg0); end
+  def self.setitem(arg0, arg1, arg2); end
+  def self.str(arg0); end
+  def self.unicode_literals?; end
+  def sequence_contains(arg0, arg1); end
+  def sequence_each(arg0); end
+  def setitem(arg0, arg1, arg2); end
+  def str(arg0); end
+  def unicode_literals?; end
+end
+module PyCall::Conversion
+  def from_ruby(arg0); end
+  def register_python_type_mapping(arg0, arg1); end
+  def self.from_ruby(arg0); end
+  def self.register_python_type_mapping(arg0, arg1); end
+  def self.to_ruby(arg0); end
+  def self.unregister_python_type_mapping(arg0); end
+  def to_ruby(arg0); end
+  def unregister_python_type_mapping(arg0); end
+end
+class PyCall::Tuple
+  def length; end
+  def self.new(*arg0); end
+  def to_a; end
+  def to_ary; end
+  extend PyCall::PyTypeObjectWrapper
+  include PyCall::PyObjectWrapper
+end
+class PyCall::PyRubyPtr < PyCall::PyPtr
+  def __ruby_object_id__; end
+end
+class PyCall::Dict
+  def [](key); end
+  def delete(key); end
+  def each(&block); end
+  def has_key?(key); end
+  def include?(key); end
+  def key?(key); end
+  def length; end
+  def member?(key); end
+  def self.new(h); end
+  def to_h; end
+  extend PyCall::PyTypeObjectWrapper
+  include Enumerable
+  include PyCall::PyObjectWrapper
+end
+class PyCall::List
+  def <<(item); end
+  def each(&block); end
+  def include?(item); end
+  def length; end
+  def push(*items); end
+  def sort!; end
+  def sort; end
+  def to_a; end
+  def to_ary; end
+  extend PyCall::PyTypeObjectWrapper
+  include Enumerable
+  include PyCall::PyObjectWrapper
+end
+class PyCall::Slice
+  def self.all; end
+  extend PyCall::PyTypeObjectWrapper
+  include PyCall::PyObjectWrapper
 end

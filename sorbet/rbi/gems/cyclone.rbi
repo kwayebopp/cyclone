@@ -9,18 +9,41 @@
 #
 # cyclone-0.1.0
 
-class LinkClock
-  def bpm(*args, &blk); end
-  def bpm=(arg0); end
-  def create_notify_thread(*args, &blk); end
-  def initialize(*args, &blk); end
-  def notify_thread_target(*args, &blk); end
-  def running?(*args, &blk); end
-  def start(*args, &blk); end
-  def stop(*args, &blk); end
-  def subscribe(*args, &blk); end
-  def unsubscribe(*args, &blk); end
-  extend T::Private::Methods::MethodHooks
-  extend T::Private::Methods::SingletonMethodHooks
-  extend T::Sig
+class Object < BasicObject
+  def c; end
+  def clear; end
+  def clock; end
+  def cyclone_help; end
+  def d1(arg); end
+  def d10(arg); end
+  def d11(arg); end
+  def d12(arg); end
+  def d2(arg); end
+  def d3(arg); end
+  def d4(arg); end
+  def d5(arg); end
+  def d6(arg); end
+  def d7(arg); end
+  def d8(arg); end
+  def d9(arg); end
+  def echo; end
+  def h; end
+  def hush; end
+  def kill_streams(*keys); end
+  def ks(*keys); end
+  def list_streams; end
+  def ls; end
+  def m(*keys); end
+  def mute_streams(*keys); end
+  def muted_streams; end
+  def noecho; end
+  def p(key, pattern); end
+  def ps; end
+  def put_streams; end
+  def solo(*keys); end
+  def solo_streams(*keys); end
+  def stack_streams(new_name, keys); end
+  def streams; end
+  def um(*keys); end
+  def unmute_streams(*keys); end
 end

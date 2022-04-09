@@ -1,3 +1,4 @@
+# typed: false
 require 'logger'
 
 module Logging
