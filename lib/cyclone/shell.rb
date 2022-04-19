@@ -15,7 +15,7 @@ require_relative "./control"
 include Cyclone
 include Cyclone::Chords
 
-@default_clock = LinkClock.new(120)
+@default_clock = LinkClock.new
 @streams = {}
 @muted_streams = {}
 
@@ -25,15 +25,15 @@ def cyclone_help
   puts("use `d1(pattern)` to set a pattern for the default stream `:d1`.")
   puts("there are 12 default streams: :d1, :d2, :d3,..., :d12.")
   puts()
-  puts("use `p(name, pattern)` create a stream with a custom name and set its pattern.")
+  puts("use `p(id, pattern)` create a stream with a custom ID and set its pattern.")
   puts()
-  puts("use `ps` to print a list of all of your streams.")
+  puts("use `ps` to print a list of all of your stream IDs.")
   puts()
-  puts("use `m stream_name` to mute a stream. you can mute multiple streams by separating them with commas.")
+  puts("use `m stream_id` to mute a stream. you can mute multiple streams by separating their IDs with commas.")
   puts()
-  puts("use `um stream_name` to unmute a stream. you can unmute multiple streams by separating them with commas.")
+  puts("use `um stream_id` to unmute a stream. you can unmute multiple streams by separating their IDs with commas.")
   puts()
-  puts("use `k stream_name` to kill a stream. you can kill multiple streams by separating them with commas.")
+  puts("use `k stream_id` to kill a stream. you can kill multiple streams by separating them with commas.")
   puts()
   puts("use `hush` to silence all streams.")
   puts()
@@ -41,7 +41,7 @@ def cyclone_help
   puts("this is useful for inspecting the structure of patterns and the output of evaluated statements.")
   puts()
   puts("use `noecho` to disable value inspection in the shell.")
-  puts("if you would like to print the value of a statement while in `noecho`, use `pp my_statement`.")
+  puts("if you would like to print the value of a statement while in `noecho` mode, use `pp my_statement`.")
   puts()
   puts("use `q` to exit the shell.")
   puts()
@@ -49,19 +49,23 @@ def cyclone_help
 end
 alias h cyclone_help
 
+def setbpm(bpm)
+  clock.bpm = bpm
+end
+
 # for defining named outputs
-def p(key, pattern)
-  if key.respond_to?(:to_sym)
-    symbol = key.to_sym
-    unless @streams.keys.include?(symbol)
+def p(id, pattern)
+  if id.respond_to?(:to_sym)
+    symbol_id = id.to_sym
+    unless @streams.keys.include?(symbol_id)
       stream = SuperDirtStream.new
       @default_clock.subscribe(stream)
-      @streams[symbol] = stream
+      @streams[symbol_id] = stream
     end
-    @streams[symbol].pattern = pattern
+    @streams[symbol_id].pattern = pattern
     return pattern
   end
-  raise ArgumentError, "stream name must be a string (e.g., 'foo') or a symbol (e.g., :foo)"
+  raise ArgumentError, "stream ID must be a string (e.g., 'foo') or a symbol (e.g., :foo)"
 end
 
 # definining dirt streams d1-d12 as functions
@@ -98,42 +102,40 @@ def put_streams
 end
 alias ps put_streams
 
-def mute_streams(*keys)
-  keys.map(&:to_sym).each do |k|
-    if streams.include?(k)
-      muted_streams[k] = streams[k]
-      streams[k].pattern = silence
+def mute_streams(*ids)
+  ids.map(&:to_sym).each do |id|
+    if streams.include?(id)
+      muted_streams[id] = streams[id].dup
+      streams[id].pattern = silence
     end
   end
 end
 
 alias m mute_streams
 
-def unmute_streams(*keys)
-  keys.map(&:to_sym).each do |k|
-    if muted_streams.include?(k)
-      streams[k] = muted_streams[k]
-      muted_streams.delete(k)
+def unmute_streams(*ids)
+  ids.map(&:to_sym).each do |id|
+    if muted_streams.include?(id)
+      streams[id].pattern = muted_streams[id].pattern
+      muted_streams.delete(id)
     end
   end
 end
 alias um unmute_streams
 
 def solo_streams(*keys)
-  streams.each do |key, _stream|
-    unmute_streams(key) if muted_streams.include?(key)
-    mute_streams(key) unless keys.map(&:to_sym).include?(key)
+  arg_ids = keys.map(&:to_sym)
+  streams.each do |id, _stream|
+    unmute_streams(id) if muted_streams.include?(id)
+    mute_streams(id) unless arg_ids.include?(id)
   end
 end
 alias solo solo_streams
 
-def stack_streams(new_name, keys)
-  streams_to_stack = streams.map do |name, stream|
-    stream.pattern if keys.map(&:to_sym).include?(name)
-  end
-
-  kill_streams(*keys)
-  p(new_name, stack(streams_to_stack))
+def stack_streams(new_id, *stream_ids)
+  patterns = streams.fetch_values(*(stream_ids.map(&:to_sym))).map(&:pattern)
+  kill_streams(*stream_ids)
+  p(new_id, stack(patterns))
 end
 
 def kill_streams(*keys)
@@ -157,5 +159,5 @@ end
 
 def noecho
   conf.echo = false
-  pp "NOECHO MODE ENABLED"
+  pp "ECHO MODE DISABLED"
 end
