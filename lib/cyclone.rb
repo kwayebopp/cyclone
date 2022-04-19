@@ -77,7 +77,7 @@ module Cyclone
     puts("\n== APPLICATIVE ==\n")
     x = F.fastcat([Pattern.pure(->(v) { v + 1 }), Pattern.pure(->(v) { v + 2 })])
     y = F.fastcat([F.pure(3), F.pure(4), F.pure(5)])
-    z = x.app(y)
+    z = x.app_both(y)
     pattern_pretty_printing(
       pattern: z,
       query_span: TimeSpan.new(0, 1)
@@ -172,6 +172,7 @@ module Cyclone
 
     Pattern.slowcat(patterns)
   end
+  alias cat slowcat
 
   sig { params(patterns: T::Array[T.untyped]).returns(Pattern) }
   def fastcat(patterns)
@@ -179,7 +180,6 @@ module Cyclone
 
     Pattern.fastcat(patterns)
   end
-  alias cat fastcat
 
   sig { params(patterns: T::Array[T.untyped]).returns(Pattern) }
   def stack(patterns)
@@ -187,6 +187,18 @@ module Cyclone
 
     Pattern.stack(patterns)
   end
+
+  sig { params(modifier: T.proc.params(pattern: Pattern).returns(Pattern), pattern: T.untyped).returns(Pattern) }
+  def superimpose(modifier, pattern)
+    Pattern.superimpose(modifier, pattern)
+  end
+
+  sig { params(modifiers: T::Array[T.proc.params(pattern: Pattern).returns(Pattern)], pattern: T.untyped).returns(Pattern) }
+  def layer(modifiers, pattern)
+    Pattern.layer(modifiers, pattern)
+  end
+
+
 
   sig { params(things: T.untyped).returns(Pattern) }  
   def sequence(things)
@@ -224,40 +236,46 @@ module Cyclone
   end
   alias pr polyrhythm
 
-  sig { params(pattern: Pattern).returns(Pattern) }
-  def rev(pattern)
-    pattern.rev
-  end
-
-  # the c stands for "currified"
+  # the c stands for "curried"
   sig { returns(T.proc.returns(Pattern)) }
   def revc
-    Cyclone.method(:rev).curry(1)
+    Cyclone.method(:inverted_rev).curry(1)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
-  def fast
+  def fastc
     Cyclone.method(:inverted_fast).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
-  def slow
+  def slowc
     Cyclone.method(:inverted_slow).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
-  def early
+  def earlyc
     Cyclone.method(:inverted_early).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
-  def late
+  def latec
     Cyclone.method(:inverted_late).curry(2)
   end
 
   sig { returns(T.proc.returns(Pattern)) }
-  def every
+  def everyc
     Cyclone.method(:inverted_every).curry(3)
+  end
+
+  sig { returns(T.proc.returns(Pattern)) }
+  def appendc
+    Cyclone.method(:inverted_append).curry(2)
+  end
+  alias slow_appendc appendc
+
+  sig { returns(T.proc.returns(Pattern)) }
+  def fast_appendc
+    Cyclone.method(:inverted_fastappend).curry(2)
   end
 
   ########### Signals
@@ -267,24 +285,24 @@ module Cyclone
   sig do
     params(
       time_fun: T.proc.params(time: Numeric).returns(T.untyped)
-    ).returns(Pattern)
+    ).returns(FloatPattern)
   end
   def signal(time_fun)
     query = lambda do |span|
       [Event.new(nil, span, time_fun.call(span.midpoint))]
     end
 
-    Pattern.new(query)
+    FloatPattern.new(query)
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def sine2
-    signal(->(t) { Math.sin(Math::PI * 2 * t) })
+    signal(->(t) { Math.sin(Math::PI * 2 * t.to_f) })
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def sine
-    signal(->(t) { (Math.sin(Math::PI * 2 * t) + 1) / 2 })
+    signal(->(t) { (Math.sin(Math::PI * 2 * t.to_f) + 1) / 2 })
   end
 
   sig { returns(Pattern) }
@@ -292,49 +310,54 @@ module Cyclone
     sine2.early(0.25)
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def cosine
-    sine.early(0.25)
+   T.cast sine.early(0.25), FloatPattern
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def saw2 
-    signal(->(t) { (t % 1) * 2 })
+    signal(->(t) { ((t % 1) * 2).to_f })
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def saw
-    signal(->(t) { t % 1 })
+    signal(->(t) { (t % 1).to_f })
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def isaw2
-    signal(->(t) { (1 - (t % 1)) * 2 })
+    signal(->(t) { ((1 - (t % 1)) * 2).to_f })
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def isaw
-    signal(->(t) { 1 - (t % 1) })
+    signal(->(t) { (1 - (t % 1)).to_f })
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def tri2
-    fastcat([isaw2, saw2])
+    T.cast fastcat([isaw2, saw2]), FloatPattern
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def tri
-    fastcat([isaw, saw])
+    T.cast fastcat([isaw, saw]), FloatPattern
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def square2 
     signal(->(t) { (((t * 2) % 2).floor * 2) - 1 })
   end
 
-  sig { returns(Pattern) }
+  sig { returns(FloatPattern) }
   def square  
     signal(->(t) { ((t * 2) % 2).floor })
+  end
+
+  sig { params(min: Numeric, max: Numeric, wave: FloatPattern).returns(FloatPattern) }
+  def range(min, max, wave)
+    T.cast wave.fmap(->(v) { v * min + (max - min) }), FloatPattern
   end
 
   private
@@ -362,5 +385,20 @@ module Cyclone
   sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern), pattern: T.any(Pattern, String, T::Array[String])).returns(Pattern) }
   def inverted_every(count, fun, pattern)
     Pattern.sequence(pattern).every(count, fun)
+  end
+
+  sig { params(this: Pattern, that: Pattern).returns(Pattern) }
+  def inverted_append(this, that)
+    this.append(that)
+  end
+
+  sig { params(this: Pattern, that: Pattern).returns(Pattern) }
+  def inverted_fast_append(this, that)
+    this.fast_append(that)
+  end
+
+  sig { params(pattern: Pattern).returns(Pattern) }
+  def inverted_rev(pattern)
+    pattern.rev
   end
 end
