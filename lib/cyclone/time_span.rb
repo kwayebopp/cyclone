@@ -18,6 +18,9 @@ module Cyclone
 
     sig { params(start: Time, stop: Time).void }
     def initialize(start, stop)
+      raise ArgumentError, "#{start} cannot be converted into a Rational value" unless start.respond_to?(:to_r)
+      raise ArgumentError, "#{stop} cannot be converted into a Rational value" unless stop.respond_to?(:to_r)
+
       @start = T.let(start.to_r, Rational)
       @stop = T.let(stop.to_r, Rational)
     end
@@ -92,8 +95,37 @@ module Cyclone
 
     sig { returns(String) }
     def inspect
-      "TimeSpan(#{start}, #{stop})"
+      "TimeSpan(#{show_fraction(start)}, #{show_fraction(stop)})"
     end
     alias_method :to_s, :inspect
+
+    sig { params(frac: Rational).returns(String) }
+    def show_fraction(frac)
+      return "nil" if frac == nil
+      return "0"  if frac == 0
+      return "#{frac.numerator}" if frac.denominator == 1
+
+      lookup = {Rational(1, 2) => "½",
+                Rational(1, 3) => "⅓",
+                Rational(2, 3) => "⅔",
+                Rational(1, 4) => "¼",
+                Rational(3, 4) => "¾",
+                Rational(1, 5) => "⅕",
+                Rational(2, 5) => "⅖",
+                Rational(3, 5) => "⅗",
+                Rational(4, 5) => "⅘",
+                Rational(1, 6) => "⅙",
+                Rational(5, 6) => "⅚",
+                Rational(1, 7) => "⅐",
+                Rational(1, 8) => "⅛",
+                Rational(3, 8) => "⅜",
+                Rational(5, 8) => "⅝",
+                Rational(7, 8) => "⅞",
+                Rational(1, 9) => "⅑",
+                Rational(1,10) => "⅒"}
+
+      return lookup[frac] if lookup.key?(frac)  
+      "#{frac.numerator}/#{frac.denominator}"
+    end
   end
 end
