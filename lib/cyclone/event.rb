@@ -59,6 +59,7 @@ module Cyclone
     def with_value(fun)
       self.class.new(whole, part, fun.call(value))
     end
+    alias fmap with_value
 
     sig { returns(String) }
     def inspect
