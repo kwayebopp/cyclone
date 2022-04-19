@@ -15,6 +15,7 @@ require "irb/completion"
 
 require_relative "../lib/cyclone/shell"
 
+system 'clear'
 cyclone_help
 clock.start
 alias q exit
