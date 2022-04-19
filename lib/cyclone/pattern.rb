@@ -48,23 +48,23 @@ module Cyclone
       self.class.new(query)
     end
 
-    # Returns a new `Pattern`, with the function applied to both the `start`
-    # and `stop` of the the query `TimeSpan`.
-    sig { params(time_lambda: TimeSpan::TimeLambda).returns(Pattern) }
-    def with_query_time(time_lambda)
-      query = lambda do |span|
-        self.query.call(span.with_time(time_lambda))
-      end
-
-      self.class.new(query)
-    end
-
     # Returns a new `Pattern`, with the function applied to each `Event`
     # timespan.
     sig { params(span_lambda: TimeSpan::SpanLambda).returns(Pattern) }
     def with_event_span(span_lambda)
       query = lambda do |span|
         self.query.call(span).map { |event| event.with_span(span_lambda) }
+      end
+
+      self.class.new(query)
+    end
+
+    # Returns a new `Pattern`, with the function applied to both the `start`
+    # and `stop` of the the query `TimeSpan`.
+    sig { params(time_lambda: TimeSpan::TimeLambda).returns(Pattern) }
+    def with_query_time(time_lambda)
+      query = lambda do |span|
+        self.query.call(span.with_time(time_lambda))
       end
 
       self.class.new(query)
@@ -82,7 +82,7 @@ module Cyclone
     sig { params(value_lambda: Event::ValueLambda).returns(Pattern) }
     def with_value(value_lambda)
       query = lambda do |span|
-        self.query.call(span).map { |event| event.with_value(value_lambda) }
+        self.query.call(span).map { |event| event.fmap(value_lambda) }
       end
 
       self.class.new(query)
@@ -101,9 +101,9 @@ module Cyclone
       self.class.new(query)
     end
 
-    sig { override(allow_incompatible: true).params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern)).returns(Pattern) }
+    sig { params(count: Integer, fun: T.proc.params(pattern: Pattern).returns(Pattern)).returns(Pattern) }
     def every(count, fun)
-      Pattern.slowcat([fun.call(self)] + ([self] * (count - 1)))
+      self.class.slowcat([fun.call(self)] + ([self] * (count - 1)))
     end
 
     # Speeds up a `Pattern` by the given `factor``
@@ -113,9 +113,10 @@ module Cyclone
       fast_query.with_event_time(->(t) { t / factor })
     end
 
-    sig { override(allow_incompatible: true).params(factor: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-    def fast(factor)
-      Pattern.sequence(factor).fmap(->(fac) { faster(fac) }).outer_join
+    # Speeds up a `Pattern` by the given `Pattern` of `factors`
+    sig { params(factor_pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    def fast(factor_pattern)
+      self.class.sequence(factor_pattern).fmap(->(factor) { faster(factor) }).outer_join
     end
 
     # Slow slows down a `Pattern` by the given `factor`
@@ -124,9 +125,10 @@ module Cyclone
       faster(1 / factor.to_f)
     end
 
-    sig { override(allow_incompatible: true).params(factor: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-    def slow(factor)
-      Pattern.sequence(factor).fmap(->(fac) { slower(fac) }).outer_join
+    # Slows down a `Pattern` by the given `Pattern` of `factors`
+    sig { params(factor_pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    def slow(factor_pattern)
+      self.class.sequence(factor_pattern).fmap(->(factor) { slower(factor) }).outer_join
     end
 
     # Equivalent of Tidal's `<~` operator
@@ -135,9 +137,9 @@ module Cyclone
       with_query_time(->(t) { t + offset }).with_event_time(->(t) { t - offset })
     end
 
-    sig { override(allow_incompatible: true).params(offset: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-    def early(offset)
-      Pattern.sequence(offset).fmap(->(ofst) { earlier(ofst) }).outer_join
+    sig { params(offset_pattern: T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    def early(offset_pattern)
+      self.class.sequence(offset_pattern).fmap(->(offset) { earlier(offset) }).outer_join
     end
 
     # Equivalent of Tidal's `~>` operator
@@ -146,43 +148,34 @@ module Cyclone
       early(-offset)
     end
 
-    sig { override(allow_incompatible: true).params(offset:  T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
-    def late(offset)
-      Pattern.sequence(offset).fmap(->(ofst) { later(ofst) }).outer_join
+    sig { params(offset_pattern:  T.any(Pattern, Numeric, T::Array[Numeric])).returns(Pattern) }
+    def late(offset_pattern)
+      self.class.sequence(offset_pattern).fmap(->(offset) { later(offset) }).outer_join
     end
 
-    sig { override(allow_incompatible: true).params(
+    sig { params(
       binary_pattern: T.any(Pattern, T.untyped, T::Array[T.untyped]), 
       fun: T.proc.params(pattern: Pattern).returns(Pattern)
     ).returns(Pattern) }
     def when(binary_pattern, fun)
-      binary_pat = Pattern.sequence(binary_pattern)
+      binary_pat = self.class.sequence(binary_pattern)
       true_pat = binary_pat.filter_values(Cyclone.id)
       false_pat = binary_pat.filter_values(->(v) { !v })
       with_pat = true_pat.fmap(->(_) { ->(y) { y } }).app_right(fun.call(self))
       without_pat = false_pat.fmap(->(_) { ->(y) { y } }).app_right(self)
-      Pattern.stack([with_pat, without_pat])
+      self.class.stack([with_pat, without_pat])
     end
 
-    sig { override(allow_incompatible: true).params(
+    sig { params(
       time_pattern: RationalPattern,
       fun: T.proc.params(pattern: Pattern).returns(Pattern)
     ).returns(Pattern) }
     def off(time_pattern, fun)
-      Pattern.stack([self, fun.call(early(time_pattern))])
-    end
-
-    sig {
-      override(allow_incompatible: true).params(
-        other: Pattern
-      ).returns(Pattern)
-    }
-    def append(other)
-      Pattern.fastcat([self, other])
+      self.class.stack([self, fun.call(early(time_pattern))])
     end
 
     sig { 
-      override(allow_incompatible: true).returns(Pattern)
+      returns(Pattern)
     }
     def rev
       query = lambda do |span|
@@ -206,20 +199,25 @@ module Cyclone
     def jux(func, by: 1)
       by /= 2.0
       elem_or = lambda do |dict, key, default|
-        return dict[key] if dict.key?(key)
-
-        default
+        dict.key?(key) ? dict[key] : default
       end
 
-      left = self.with_value(->(val) { 
-        (val.to_a + [["pan", elem_or.call(val, "pan", 0.5) - by]].to_h)
-       })
-      right = self.with_value(->(val) {
-        (val.to_a + [["pan", elem_or.call(val, "pan", 0.5) + by]].to_h)
-      })
+      left = self.fmap(->(val) { val.merge({"pan" => elem_or.call(val, "pan", 0.5) - by}) })
+      right = self.fmap(->(val) { val.merge({"pan" => elem_or.call(val, "pan", 0.5) + by}) })
 
-      Pattern.stack([left, func.call(right)])
+      self.class.stack([left, func.call(right)])
     end
+
+    # sig { params(times: Integer).returns(Pattern) }
+    # def ply(times)
+    #   query = lambda do |span|
+    #     self.query.call(span).map do |event| 
+    #       ([event] * times).each_with_index.map { |e, i| e.with_span(->(t) { t.with_time { |t| t / times } })}
+    #     end
+    #   end
+
+    #   self.class.new(query)
+    # end
 
     sig { returns(T::Array[Event]) }
     def first_cycle
@@ -267,6 +265,9 @@ module Cyclone
 
       new(query).split_queries
     end
+    class << self
+      alias cat slowcat
+    end
 
     # Concatenation: as with slowcat, but squashes a cycle from each
     # pattern into one cycle
@@ -274,8 +275,24 @@ module Cyclone
     def self.fastcat(patterns)
       slowcat(patterns).faster(patterns.size)
     end
-    class << self
-      alias cat fastcat
+
+    sig {
+      params(
+        other: Pattern
+      ).returns(Pattern)
+    }
+    def slow_append(other)
+      self.class.cat([self, other])
+    end
+    alias append slow_append
+
+    sig {
+      params(
+        other: Pattern
+      ).returns(Pattern)
+    }
+    def fast_append(other)
+      self.class.fastcat([self, other])
     end
 
     # Pile up patterns
@@ -287,6 +304,19 @@ module Cyclone
       end
 
       new(query)
+    end
+
+    # plays a modified version of a pattern 'on top of' the original pattern, resulting 
+    # in the modified and original version of the patterns being played at the same time.
+    sig { params(modifier: T.proc.params(pattern: Pattern).returns(Pattern), pattern: T.untyped).returns(Pattern) }
+    def self.superimpose(modifier, pattern)
+      stack([pattern, modifier.call(reify(pattern))])
+    end
+
+    # layer up multiple functions on one pattern
+    sig { params(modifiers: T::Array[T.proc.params(pattern: Pattern).returns(Pattern)], pattern: T.untyped).returns(Pattern) }
+    def self.layer(modifiers, pattern)
+      stack(modifiers.map { |m| m.call(reify(pattern)) })
     end
 
     sig { params(thing: T.any(T::Array[T.untyped], Pattern, T.untyped)).returns(Pattern) }
@@ -348,24 +378,59 @@ module Cyclone
       pure(thing)
     end
 
-    # Tidal's `<*>` operator
-    sig { params(pattern_of_values: Pattern).returns(Pattern) }
-    def app(pattern_of_values)
-      whole_fun = lambda do |this, that|
-        return this.intersect(that) unless this.nil? || that.nil?
+    # Assumes self is a pattern of functions, and given a function to
+    # resolve wholes, applies a given pattern of values to that pattern
+    # of functions.
+    sig do
+      params(
+        whole_fun: T.proc.params(
+          arg0: TimeSpan,
+          arg1: TimeSpan
+        ).returns(T.nilable(TimeSpan)),
+        value_pattern: Pattern
+      ).returns(Pattern)
+    end
+    def app_whole(whole_fun, value_pattern)
+      func_pattern = self
+      query = lambda do |span|
+        func_events = func_pattern.query.call(span)
+        value_events = value_pattern.query.call(span)
+        apply = lambda do |func_event, value_event|
+          intersection = func_event.part.maybe_intersect(value_event.part)
+          unless intersection.nil?
+            Event.new(
+              whole_fun.call(func_event.whole, value_event.whole),
+              intersection,
+              func_event.value.call(value_event.value)
+            )
+          end
+        end
+        func_events.flat_map do |func_event|
+          # .compact to eliminate `nil`s that may be returned from `apply`
+          value_events.map { |value_event| apply.call(func_event, value_event) }.compact
+        end
       end
-
-      app_whole(whole_fun, pattern_of_values)
+      self.class.new(query)
     end
 
+    #  Tidal's `<*>` operator
+    sig { params(value_pattern: Pattern).returns(Pattern) }
+    def app_both(value_pattern)
+      whole_fun = lambda do |this, that|
+        this.intersect(that) unless this.nil? || that.nil?
+      end
+      app_whole(whole_fun, value_pattern)
+    end
+
+
     # Tidal's `<*` operator
-    sig { params(pattern_of_values: Pattern).returns(Pattern) }
-    def app_left(pattern_of_values)
-      pattern_of_functions = self
+    sig { params(value_pattern: Pattern).returns(Pattern) }
+    def app_left(value_pattern)
+      func_pattern = self
       query = lambda do |span|
         events = []
-        pattern_of_functions.query.call(span).each do |func_event|
-          value_events = pattern_of_values.query.call(func_event.part)
+        func_pattern.query.call(span).each do |func_event|
+          value_events = value_pattern.query.call(func_event.part)
           value_events.each do |value_event|
             new_whole = func_event.whole
             new_part = func_event.part.intersect(value_event.part)
@@ -375,17 +440,17 @@ module Cyclone
         end
         events
       end
-      Pattern.new(query)
+      self.class.new(query)
     end
 
     # Tidal's `*>` operator
-    sig { params(pattern_of_values: Pattern).returns(Pattern) }
-    def app_right(pattern_of_values)
-      pattern_of_functions = self
+    sig { params(value_pattern: Pattern).returns(Pattern) }
+    def app_right(value_pattern)
+      func_pattern = self
       query = lambda do |span|
         events = []
-        pattern_of_values.query.call(span).each do |value_event|
-          func_events = pattern_of_functions.query.call(value_event.part)
+        value_pattern.query.call(span).each do |value_event|
+          func_events = func_pattern.query.call(value_event.part)
           func_events.each do |func_event|
             new_whole = value_event.whole
             new_part = func_event.part.intersect(value_event.part)
@@ -395,17 +460,9 @@ module Cyclone
         end
         events
       end
-      Pattern.new(query)
+      self.class.new(query)
     end
 
-    #  Tidal's `<*>` operator
-    sig { params(pattern_of_values: Pattern).returns(Pattern) }
-    def app_both(pattern_of_values)
-      whole_fun = lambda do |this, that|
-        this.intersect(that) unless this.nil? || that.nil?
-      end
-      app_whole(whole_fun, pattern_of_values)
-    end
 
     sig do
       params(
@@ -466,28 +523,12 @@ module Cyclone
 
     sig { params(other: T.untyped).returns(Pattern) }
     def +(other)
-      # if instance_of?(ControlPattern) && other.instance_of?(ControlPattern)
-      #   return  fmap(->(x) { ->(y) {
-      #     if x.key?("sound") && y.key?("n")
-      #       {"sound" => "#{x["sound"]}:#{y["n"]}"}
-      #     elsif x.key?("n") && y.key?("n")
-      #       {"n" => x["n"] + y["n"]}
-      #     end
-      #    } }).app_left(self.class.reify(other)) 
-      # end
-      fmap(->(x) { ->(y) { x + y } }).app(self.class.reify(other))
+      self.fmap(->(x) { ->(y) { x + y } }).app_left(self.class.reify(other))
     end
 
     sig { params(other: T.untyped).returns(Pattern) }
     def -(other)
-      fmap(->(x) { ->(y) { x - y } }).app(self.class.reify(other))
-    end
-
-    # The union of two patterns of dictionaries, with values from left
-    # replacing any with the same name from the right
-    sig { params(other: Pattern).returns(Pattern) }
-    def <<(other)
-      fmap(->(x) { ->(y) { {**y, **x} } }).app_left(other)
+      self.fmap(->(x) { ->(y) { x - y } }).app_left(self.class.reify(other))
     end
 
     # Overrides the >> operator to support combining patterns of
@@ -496,7 +537,14 @@ module Cyclone
     # any with the same name from the left
     sig { params(other: Pattern).returns(Pattern) }
     def >>(other)
-      fmap(->(x) { ->(y) { {**x, **y} } }).app_left(other)
+      self.fmap(->(this) { ->(that) { this.merge(that) } }).app_left(other)
+    end
+
+    # The union of two patterns of Hashes, with values from left
+    # replacing any with the same name from the right
+    sig { params(other: Pattern).returns(Pattern) }
+    def <<(other)
+      other.fmap(->(this) { ->(that) { this.merge(that) } }).app_left(self)
     end
 
     sig { returns(String) }
@@ -526,40 +574,6 @@ module Cyclone
 
     private
 
-    # Assumes self is a pattern of functions, and given a function to
-    # resolve wholes, applies a given pattern of values to that pattern
-    # of functions.
-    sig do
-      params(
-        whole_fun: T.proc.params(
-          arg0: TimeSpan,
-          arg1: TimeSpan
-        ).returns(T.nilable(TimeSpan)),
-        pattern_of_values: Pattern
-      ).returns(Pattern)
-    end
-    def app_whole(whole_fun, pattern_of_values)
-      pattern_of_funs = self
-      query = lambda do |span|
-        event_funs = pattern_of_funs.query.call(span)
-        event_vals = pattern_of_values.query.call(span)
-        apply = lambda do |event_fun, event_val|
-          intersection = event_fun.part.maybe_intersect(event_val.part)
-          unless intersection.nil?
-            Event.new(
-              whole_fun.call(event_fun.whole, event_val.whole),
-              intersection,
-              event_fun.value.call(event_val.value)
-            )
-          end
-        end
-        event_funs.flat_map do |event_fun|
-          # .compact to eliminate `nil`s that may be returned from `apply`
-          event_vals.map { |event_val| apply.call(event_fun, event_val) }.compact
-        end
-      end
-      self.class.new(query)
-    end
 
     sig do
       params(
@@ -571,7 +585,7 @@ module Cyclone
       ).returns(Pattern)
     end
     def bind_whole(choose_whole, fun)
-      pattern_of_values = self
+      value_pattern = self
       query = lambda do |span|
         # create a new event from the contents of two other events 
         with_whole = lambda do |this_event, that_event|
@@ -590,7 +604,7 @@ module Cyclone
             with_whole.call(event, evt)
           end
         end
-        pattern_of_values.query.call(span).flat_map(&match)
+        value_pattern.query.call(span).flat_map(&match)
       end
 
       self.class.new(query)
@@ -625,7 +639,7 @@ module Cyclone
 
     sig { params(value: T.untyped).returns(T::Boolean) }
     def self.check_type(value)
-      value.instance_of?(Integer)
+      value.instance_of?(Integer) || value.respond_to?(:to_i)
     end
   end
 
