@@ -61,39 +61,50 @@ class SuperDirtStream
     return unless playing? && pattern
 
     cycle_from, cycle_to = cycle
-    events = T.cast(pattern, Cyclone::Pattern).onsets_only.query.call(Cyclone::TimeSpan.new(cycle_from, cycle_to))
-    logger.debug("\n#{events.map(&:value)}") unless events.empty?
 
-    events.each do |event|
-      event_whole = T.cast(event.whole, Cyclone::TimeSpan)
-      cycle_on = event_whole.start
-      cycle_off = event_whole.stop
+    begin
+      events = T.cast(pattern, Cyclone::Pattern).onsets_only.query.call(Cyclone::TimeSpan.new(cycle_from, cycle_to))
+      logger.debug("\n#{events.map(&:value)}") unless events.empty?
 
-      logger.debug([cycle_on, cycle_off, bpc].join(" "))
-      logger.debug([cycle_on * bpc, cycle_off * bpc].join(" "))
+      events.each do |event|
+        event_whole = T.cast(event.whole, Cyclone::TimeSpan)
+        cycle_on = event_whole.start
+        cycle_off = event_whole.stop
 
-      link_on = session_state.timeAtBeat((cycle_on * bpc).to_f, 0)
-      link_off = session_state.timeAtBeat((cycle_off * bpc).to_f, 0)
-      delta_secs = (link_off - link_on).fdiv(mill)
+        logger.debug([cycle_on, cycle_off, bpc].join(" "))
+        logger.debug([cycle_on * bpc, cycle_off * bpc].join(" "))
 
-      link_secs = now.fdiv(mill)
-      liblo_diff = @liblo.time - link_secs
-      ticks = link_on.fdiv(mill) + liblo_diff + latency
+        link_on = session_state.timeAtBeat((cycle_on * bpc).to_f, 0)
+        link_off = session_state.timeAtBeat((cycle_off * bpc).to_f, 0)
+        delta_secs = (link_off - link_on).fdiv(mill)
 
-      value = event.value
-      value["cps"] = cps.to_f
-      value["cycle"] = cycle_on.to_f
-      value["delta"] = delta_secs.to_f
+        link_secs = now.fdiv(mill)
+        liblo_diff = @liblo.time - link_secs
+        ticks = link_on.fdiv(mill) + liblo_diff + latency
 
-      msg = []
-      value.to_a.each do |k, v|
-        msg << k
-        msg << v
+        value = event.value
+        value["cps"] = cps.to_f
+        value["cycle"] = cycle_on.to_f
+        value["delta"] = delta_secs.to_f
+
+        msg = []
+        # msg = [type: \dirt, dirt: ~dirt]
+
+        value.to_a.each do |k, v|
+          if k == "s"
+            msg << "sound"
+          else
+            msg << k
+          end
+          msg << v
+        end
+
+        logger.debug(msg.join(" "))
+        bundle = liblo.Bundle.new(ticks, liblo.Message.new("/dirt/play", *msg))
+        PyCall.getattr(liblo, :send).call(address, bundle)
       end
-
-      logger.debug(msg.join(" "))
-      bundle = liblo.Bundle.new(ticks, liblo.Message.new("/dirt/play", *msg))
-      PyCall.getattr(liblo, :send).call(address, bundle)
+    rescue Exception => e
+      puts e.message
     end
   end
 
