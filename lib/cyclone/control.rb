@@ -166,13 +166,10 @@ generic_params = [
     ["f", "cps", ""]
 ]
 
-def make_control(control_name)
+
+generic_params.each do |(_type, control_name, _desc)|
   define_method(control_name) do |pattern|
     control_lambda = ->(value) { {control_name.to_s => value} }
     sequence(pattern).fmap(control_lambda)
   end
-end
-
-generic_params.each do |(_type, name, _desc)|
-  make_control(name)
 end
