@@ -16,12 +16,12 @@ class LinkClock
   include Logging
 
   sig { returns(T.any(Float, Integer)) }
-  attr_accessor :bpm
+  attr_reader :bpm
   
   attr_reader :link
 
   sig { params(bpm: T.any(Float, Integer)).void }
-  def initialize(bpm = 120)
+  def initialize(bpm = 135)
     @bpm = T.let(bpm, T.any(Float, Integer))
 
     @link = T.let(
@@ -86,6 +86,23 @@ class LinkClock
 
     # block until the start of the next frame
     @notify_thread.join
+  end
+
+  sig {params(bpm:  T.any(Float, Integer)).void}
+  def bpm=(bpm)
+    Thread.new {
+      @mutex.synchronize { 
+        @bpm = T.let(bpm, T.any(Float, Integer));
+        @link = T.let(
+          PyCall.import_module("link").Link.new(bpm),
+          T.untyped
+        );
+      }
+    }.join
+  end
+
+  def cps
+    bpm.fdiv(60).fdiv(4)
   end
 
   private
